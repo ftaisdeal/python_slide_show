@@ -1,7 +1,8 @@
 PYTHON SLIDE SHOW
 
 This script provides a way to view in full screen mode all the images in a directory
-as a slide show.
+as a slide show.  Each image is resized such that it fills the screen either vertically
+or hozizontally, depending on the aspect ratio of the image.
 
 The script will cycle through the images indefinitely unless you either
 press escape or the "q" key, both of which quit the program.
@@ -9,9 +10,6 @@ press escape or the "q" key, both of which quit the program.
 To pause the slide show, press the space bar.
 
 To move forward or backward one image, use the left or right arrow.
-
-Each image is resized such that it fills the screen either vertically or
-hozizontally, depending on the aspect ratio of the image.
 
 Features:
 1. Specify a directory
