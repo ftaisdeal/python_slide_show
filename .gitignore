@@ -58,5 +58,6 @@ venv.bak/
 htmlcov/
 
 # Image test directories (optional - uncomment if you don't want to track test images)
+images/
 # test_images/
 # sample_images/
