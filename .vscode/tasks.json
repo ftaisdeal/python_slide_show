@@ -1,0 +1,17 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Run Image Slideshow",
+			"type": "shell",
+			"command": "/Users/firinn/Desktop/prof dev/repos/python_slide_show/.venv/bin/python",
+			"args": [
+				"images.py",
+				"${input:imageDirectory}"
+			],
+			"group": "build",
+			"isBackground": false,
+			"problemMatcher": []
+		}
+	]
+}

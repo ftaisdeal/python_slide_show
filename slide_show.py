@@ -6,14 +6,14 @@ import tkinter as tk
 import locale
 
 def get_image_files(directory):
-    exts = ('.jpg', '.png', '.webp')
+    exts = ('.jpg', '.jpeg', '.png', '.webp')
     files = [f for f in Path(directory).iterdir() if f.suffix.lower() in exts and f.is_file()]
     # Sort using macOS Finder's natural sorting (locale-aware)
     files.sort(key=lambda x: locale.strxfrm(x.name.lower()))
     return files
 
 class FullscreenImageViewer:
-    def __init__(self, image_files, display_time_ms=8000, dissolve_time_ms=1000, dissolve_frames=30):
+    def __init__(self, image_files, display_time_ms=5000, dissolve_time_ms=1000, dissolve_frames=30):
         self.image_files = image_files
         self.display_time_ms = display_time_ms
         self.dissolve_time_ms = dissolve_time_ms
@@ -31,10 +31,10 @@ class FullscreenImageViewer:
         self.next_img_canvas = None
         self.dissolving = False
         self.screen_size = (self.root.winfo_screenwidth(), self.root.winfo_screenheight())
-        self.root.bind("<Escape>", self.quit_app)
         self.root.bind("<Right>", self.next_image)
         self.root.bind("<Left>", self.prev_image)
         self.root.bind("<space>", self.toggle_pause)
+        self.root.bind("<Escape>", self.quit_app)
         self.root.bind("q", self.quit_app)
         self.show_image(self.img_idx, dissolve=False)
         self.root.mainloop()
