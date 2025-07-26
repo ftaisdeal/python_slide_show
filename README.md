@@ -4,7 +4,7 @@ This script provides a way to view in full screen mode all the images in a direc
 as a slide show.
 
 The script will cycle through the images indefinitely unless you either
-press escape or the "q" key.
+press escape or the "q" key, both of which quit the program.
 
 To pause the slide show, press the space bar.
 
@@ -37,4 +37,4 @@ NOTES
 
 1. The script searches for JPEG, PNG, WEBP, BMP and TIFF files without regard to case or optional spelling, such as JPG or JPEG.
 2. The order of the images in the slide show will correspond to the order displayed in the directory on your operating system.
-3. When you pause a slide with the space bar, if you then resume the slide show the slide will be display for the full duration, as though you had started that slide from the beginning of its full duration again.
+3. When you pause a slide with the space bar, if you then resume the slide show the slide will be displayed for the full duration, as though you had started that slide from the beginning of its full duration again.
