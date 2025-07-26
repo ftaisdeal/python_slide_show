@@ -1,15 +1,34 @@
 import os
 import sys
+import platform
 from pathlib import Path
 from PIL import Image, ImageTk
 import tkinter as tk
 import locale
 
 def get_image_files(directory):
-    exts = ('.jpg', '.jpeg', '.png', '.webp')
+    exts = ('.jpg', '.jpeg', '.png', '.webp', '.bmp', '.gif', '.tiff', '.tif')
     files = [f for f in Path(directory).iterdir() if f.suffix.lower() in exts and f.is_file()]
-    # Sort using macOS Finder's natural sorting (locale-aware)
-    files.sort(key=lambda x: locale.strxfrm(x.name.lower()))
+    
+    # Sort according to the operating system's default file sorting
+    system = platform.system()
+    
+    if system == "Darwin":  # macOS
+        # Use locale-aware sorting like Finder
+        files.sort(key=lambda x: locale.strxfrm(x.name.lower()))
+    elif system == "Windows":
+        # Windows Explorer uses case-insensitive natural sorting
+        import re
+        def natural_sort_key(path):
+            def convert(text):
+                return int(text) if text.isdigit() else text.lower()
+            return [convert(c) for c in re.split(r'(\d+)', path.name)]
+        files.sort(key=natural_sort_key)
+    else:  # Linux and other Unix-like systems
+        # Most Linux file managers use case-sensitive alphabetical by default
+        # but we'll use case-insensitive for better user experience
+        files.sort(key=lambda x: x.name.lower())
+    
     return files
 
 class FullscreenImageViewer:
@@ -143,11 +162,46 @@ class FullscreenImageViewer:
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("Usage: python images_dissolve.py <directory>")
+        print("Usage: python slide_show.py <directory> [display_time_seconds] [dissolve_time_seconds]")
+        print("  directory: Path to directory containing images")
+        print("  display_time_seconds: Duration to show each image (default: 5.0)")
+        print("  dissolve_time_seconds: Duration of dissolve transition (default: 1.0)")
         sys.exit(1)
+    
     directory = sys.argv[1]
+    
+    # Parse optional timing arguments
+    display_time_seconds = 5.0  # default 5 seconds
+    dissolve_time_seconds = 1.0  # default 1 second
+    
+    if len(sys.argv) >= 3:
+        try:
+            display_time_seconds = float(sys.argv[2])
+            if display_time_seconds <= 0:
+                raise ValueError("Display time must be positive")
+        except ValueError as e:
+            print(f"Error: Invalid display time '{sys.argv[2]}'. Must be a positive number.")
+            sys.exit(1)
+    
+    if len(sys.argv) >= 4:
+        try:
+            dissolve_time_seconds = float(sys.argv[3])
+            if dissolve_time_seconds < 0:
+                raise ValueError("Dissolve time must be non-negative")
+        except ValueError as e:
+            print(f"Error: Invalid dissolve time '{sys.argv[3]}'. Must be a non-negative number.")
+            sys.exit(1)
+    
+    # Convert to milliseconds for the viewer
+    display_time_ms = int(display_time_seconds * 1000)
+    dissolve_time_ms = int(dissolve_time_seconds * 1000)
+    
     image_files = get_image_files(directory)
     if not image_files:
         print("No image files found.")
         sys.exit(1)
-    FullscreenImageViewer(image_files)
+    
+    print(f"Starting slideshow with {len(image_files)} images")
+    print(f"Display time: {display_time_seconds}s, Dissolve time: {dissolve_time_seconds}s")
+    
+    FullscreenImageViewer(image_files, display_time_ms, dissolve_time_ms)
