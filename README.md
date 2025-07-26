@@ -22,6 +22,7 @@ The default duration to show each image is five seconds.
 The default dissolve duration is one second.
 
 Usage:
+
 python3 slide_show.py sample_images
 
 By adding arguments, you can change the duration each image is displayed,
@@ -31,3 +32,9 @@ python3 slide_show.py sample_images 10 2
 
 In the command above, each image is displayed for 10 seconds, and each dissolve
 has a duration of 2 seconds.
+
+NOTES
+
+1. The script searches for JPEG, PNG, WEBP, BMP and TIFF files without regard to case or optional spelling, such as JPG or JPEG.
+2. The order of the images in the slide show will correspond to the order displayed in the directory on your operating system.
+3. When you pause a slide with the space bar, if you then resume the slide show the slide will be display for the full duration, as though you had started that slide from the beginning of its full duration again.
