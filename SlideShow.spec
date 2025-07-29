@@ -29,7 +29,7 @@ exe = EXE(
     console=False,
     disable_windowed_traceback=False,
     argv_emulation=False,
-    target_arch=None,
+    target_arch='arm64',
     codesign_identity=None,
     entitlements_file=None,
 )
@@ -46,5 +46,5 @@ app = BUNDLE(
     coll,
     name='SlideShow.app',
     icon=None,
-    bundle_identifier=None,
+    bundle_identifier='com.slideshow.app',
 )
