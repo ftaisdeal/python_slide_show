@@ -1,38 +1,201 @@
-PYTHON SLIDE SHOW
+# SlideShow
 
-This script provides a way to view in full screen mode all the images in a directory
-as a slide show.  Each image is resized such that it fills the screen either vertically
-or hozizontally, depending on the aspect ratio of the image.
+A cross-platform full-screen photo slideshow application with smooth dissolve transitions.
 
-The script will cycle through the images indefinitely unless you either
-press escape or the "q" key, both of which quit the program.
+![Platform Support](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-blue)
+![Python](https://img.shields.io/badge/Python-3.8%2B-green)
+![License](https://img.shields.io/badge/License-MIT-yellow)
 
-To pause the slide show, press the space bar.
+## Features
 
-To move forward or backward one image, use the left or right arrow.
+- **Full-screen slideshow** with automatic image cycling
+- **Smooth dissolve transitions** between images
+- **Cross-platform compatibility** (Windows, macOS, Linux)
+- **Multiple image formats** (JPG, PNG, WebP, BMP, TIFF, GIF)
+- **Customizable timing** for display and transition duration
+- **Keyboard controls** for navigation and playback
+- **Natural file sorting** matching your operating system
+- **GUI and command-line** interfaces available
 
-Features:
-1. Specify a directory
-2. Specify a duration each image will be on screen
-3. Specify a duration for the dissolve between images.
+## Installation
 
-The default duration to show each image is five seconds.
-The default dissolve duration is one second.
+### Option 1: Download Pre-built Application (Recommended)
 
-Usage:
+#### Windows
+1. Go to [Releases](../../releases)
+2. Download \`SlideShow-Windows.zip\`
+3. Extract and run \`SlideShow.exe\`
 
-python3 slide_show.py sample_images
+#### macOS
+1. Go to [Releases](../../releases)
+2. Download \`SlideShow-macOS.zip\`
+3. Extract and run \`SlideShow.app\`
+4. If macOS shows security warnings, go to System Preferences > Security & Privacy > General and click "Open Anyway"
 
-By adding arguments, you can change the duration each image is displayed,
-and change the duration of the dissolve between images:
+#### Linux
+1. Go to [Releases](../../releases)
+2. Download \`SlideShow-Linux.zip\`
+3. Extract and run \`./SlideShow\`
 
-python3 slide_show.py sample_images 10 2
+### Option 2: Run from Source
 
-In the command above, each image is displayed for 10 seconds, and each dissolve
-has a duration of 2 seconds.
+#### Prerequisites
+- Python 3.8 or higher
+- pip (Python package installer)
 
-NOTES
+#### Installation Steps
 
-1. The script searches for JPEG, PNG, WEBP, BMP and TIFF files without regard to case or optional spelling, such as JPG or JPEG.
-2. The order of the images in the slide show will correspond to the order displayed in the directory on your operating system.
-3. When you pause a slide with the space bar, if you then resume the slide show the slide will be displayed for the full duration, as though you had started that slide from the beginning of its full duration again.
+1. **Clone the repository**
+   \`\`\`bash
+   git clone https://github.com/ftaisdeal/python_slide_show.git
+   cd python_slide_show
+   \`\`\`
+
+2. **Create virtual environment (recommended)**
+   
+   **Windows:**
+   \`\`\`cmd
+   python -m venv .venv
+   .venv\\Scripts\\activate
+   \`\`\`
+   
+   **macOS/Linux:**
+   \`\`\`bash
+   python3 -m venv .venv
+   source .venv/bin/activate
+   \`\`\`
+
+3. **Install dependencies**
+   \`\`\`bash
+   pip install pillow
+   \`\`\`
+
+4. **Run the application**
+   
+   **GUI Version (recommended):**
+   \`\`\`bash
+   python slide_show_gui.py
+   \`\`\`
+   
+   **Command Line Version:**
+   \`\`\`bash
+   python slide_show.py /path/to/your/photos
+   \`\`\`
+
+### Option 3: Build Your Own Executable
+
+1. **Install PyInstaller**
+   \`\`\`bash
+   pip install pyinstaller
+   \`\`\`
+
+2. **Build the application**
+   
+   **Windows:**
+   \`\`\`cmd
+   pyinstaller --onedir --windowed --name "SlideShow" slide_show_gui.py
+   \`\`\`
+   
+   **macOS/Linux:**
+   \`\`\`bash
+   pyinstaller --onedir --windowed --name "SlideShow" slide_show_gui.py
+   \`\`\`
+
+3. **Find your executable in the \`dist/\` folder**
+
+## Usage
+
+### GUI Version
+1. Launch the application
+2. Click "Browse..." to select your photo directory
+3. Adjust display time and dissolve time if desired
+4. Click "Start Slideshow"
+
+### Command Line Version
+\`\`\`bash
+python slide_show.py <directory> [display_time_seconds] [dissolve_time_seconds]
+\`\`\`
+
+**Examples:**
+\`\`\`bash
+# Basic usage with defaults (5s display, 1s dissolve)
+python slide_show.py ~/Pictures/vacation
+
+# Custom timing (8s display, 2s dissolve)
+python slide_show.py ~/Pictures/vacation 8 2
+
+# Fast slideshow (1s display, 0.5s dissolve)
+python slide_show.py ~/Pictures/vacation 1 0.5
+\`\`\`
+
+## Keyboard Controls
+
+| Key | Action |
+|-----|--------|
+| \`Escape\` or \`q\` | Quit slideshow |
+| \`Space\` | Pause/Resume |
+| \`Right Arrow\` | Next image |
+| \`Left Arrow\` | Previous image |
+
+## Supported Image Formats
+
+- JPEG (.jpg, .jpeg)
+- PNG (.png)
+- WebP (.webp)
+- BMP (.bmp)
+- TIFF (.tiff, .tif)
+- GIF (.gif)
+
+*All formats support both uppercase and lowercase extensions*
+
+## Technical Details
+
+### Image Processing
+- Images are automatically resized to fit your screen while maintaining aspect ratio
+- Images are centered on a black background
+- Smooth dissolve transitions are rendered in real-time
+
+### File Sorting
+- **Windows**: Natural sorting (image1.jpg, image2.jpg, image10.jpg)
+- **macOS**: Finder-compatible locale-aware sorting
+- **Linux**: Case-insensitive alphabetical sorting
+
+### Performance
+- Optimized for large image collections
+- Efficient memory usage with image caching
+- Smooth 60fps dissolve animations
+
+## Troubleshooting
+
+### Common Issues
+
+**"No image files found"**
+- Ensure your directory contains supported image formats
+- Check that file extensions are recognized (.jpg, .png, etc.)
+
+**App won't start on macOS**
+- Right-click the app and select "Open"
+- Go to System Preferences > Security & Privacy and allow the app
+
+**Slideshow runs too fast/slow**
+- Adjust the display time in the GUI or command line arguments
+- Minimum recommended display time: 0.1 seconds
+
+**Images appear distorted**
+- Images are automatically resized to fit screen while maintaining aspect ratio
+- Very wide or tall images will have black bars to preserve proportions
+
+### Getting Help
+- Check the [Issues](../../issues) page for known problems
+- Create a new issue with your problem description and system details
+- Include error messages and steps to reproduce
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Acknowledgments
+
+- Built with Python and Tkinter
+- Image processing powered by Pillow (PIL)
+- Cross-platform compatibility through PyInstaller
