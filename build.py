@@ -18,11 +18,18 @@ def main():
     python_cmd = sys.executable
     
     # On macOS, prefer system Python over Homebrew Python for better tkinter support
-    if platform.system() == "Darwin":
-        system_python = "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3"
+    # But in CI environments, just use the current Python
+    if platform.system() == "Darwin" and "GITHUB_ACTIONS" not in os.environ:
+        # Get the current Python version (e.g., "3.11" or "3.12")
+        python_version = f"{sys.version_info.major}.{sys.version_info.minor}"
+        system_python = f"/Library/Frameworks/Python.framework/Versions/{python_version}/bin/python3"
         if os.path.exists(system_python):
             python_cmd = system_python
             print(f"Using system Python: {python_cmd}")
+        else:
+            print(f"System Python not found at {system_python}, using current Python: {python_cmd}")
+    elif "GITHUB_ACTIONS" in os.environ:
+        print(f"Running in GitHub Actions, using setup Python: {python_cmd}")
     
     # Verify tkinter is available (critical for GUI)
     try:

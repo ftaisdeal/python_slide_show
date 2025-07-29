@@ -44,6 +44,10 @@ jobs:
 
       - name: Build with PyInstaller
         run: |
+          echo "Current working directory: $(pwd)"
+          echo "Python executable: $(which python)"
+          echo "Contents of current directory:"
+          ls -la
           python build.py
 
       - name: Create artifact name
