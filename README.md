@@ -4,7 +4,7 @@ A cross-platform full-screen photo slideshow application with smooth dissolve tr
 
 ![Platform Support](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-blue)
 ![Python](https://img.shields.io/badge/Python-3.8%2B-green)
-![License](https://img.shields.io/badge/License-MIT-yellow)
+![License](https://img.shields.io/badge/License-CC%20BY--NC%204.0-orange)
 
 ## Features
 
@@ -16,6 +16,8 @@ A cross-platform full-screen photo slideshow application with smooth dissolve tr
 - **Keyboard controls** for navigation and playback
 - **Natural file sorting** matching your operating system
 - **GUI and command-line** interfaces available
+
+> **📄 License Notice**: SlideShow is free for personal, educational, and research use under the CC BY-NC 4.0 license. Commercial use is prohibited. [Learn more](#license)
 
 ## Installation
 
@@ -202,7 +204,17 @@ The application automatically reads and applies EXIF orientation data from your 
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the **Creative Commons Attribution-NonCommercial 4.0 International License** (CC BY-NC 4.0).
+
+### What this means:
+- ✅ **You can**: Use, modify, and share this software freely for personal, educational, and research purposes
+- ✅ **You can**: Create derivative works and improvements (with attribution)
+- ❌ **You cannot**: Use this software for commercial purposes or sell it
+- 📝 **You must**: Provide appropriate attribution when sharing or modifying
+
+For the complete license terms, see the [LICENSE](LICENSE) file or visit [Creative Commons BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/).
+
+**Note**: This non-commercial license ensures the SlideShow software remains free and accessible while preventing commercial exploitation.
 
 ## Acknowledgments
 
