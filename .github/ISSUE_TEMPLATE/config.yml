@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security Vulnerability
+    url: mailto:firinn@taisdeal.com
+    about: Please report security vulnerabilities via email, not public issues
+  - name: Contributing Guidelines
+    url: https://github.com/ftaisdeal/python_slide_show/blob/main/CONTRIBUTING.md
+    about: Read our contributing guidelines before submitting issues or pull requests
