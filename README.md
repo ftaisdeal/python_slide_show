@@ -154,6 +154,16 @@ python slide_show.py ~/Pictures/vacation 1 0.5
 - Images are automatically resized to fit your screen while maintaining aspect ratio
 - Images are centered on a black background
 - Smooth dissolve transitions are rendered in real-time
+- **Automatic orientation correction** based on EXIF data ensures photos display correctly regardless of camera orientation
+
+### EXIF Orientation Support
+The application automatically reads and applies EXIF orientation data from your images:
+- **Correct rotation**: Photos taken in portrait or rotated positions display upright
+- **Seamless processing**: No manual rotation needed - works automatically
+- **Preserves quality**: Orientation correction is applied without image degradation
+- **Camera compatibility**: Works with photos from smartphones, digital cameras, and other devices that embed orientation metadata
+
+*Note: Images without EXIF orientation data will display as-is*
 
 ### File Sorting
 - **Windows**: Natural sorting (image1.jpg, image2.jpg, image10.jpg)
