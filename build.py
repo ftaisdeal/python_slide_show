@@ -14,13 +14,25 @@ def main():
     print(f"Platform: {platform.system()}")
     print(f"Python: {sys.version}")
     
-    # On macOS, prefer system Python over Homebrew Python for better tkinter support
+    # Use the current Python executable
     python_cmd = sys.executable
+    
+    # On macOS, prefer system Python over Homebrew Python for better tkinter support
     if platform.system() == "Darwin":
         system_python = "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3"
         if os.path.exists(system_python):
             python_cmd = system_python
             print(f"Using system Python: {python_cmd}")
+    
+    # Verify tkinter is available (critical for GUI)
+    try:
+        subprocess.run([python_cmd, "-c", "import tkinter; print('✅ tkinter available')"], 
+                      capture_output=True, text=True, check=True)
+    except subprocess.CalledProcessError as e:
+        print("❌ tkinter not available. GUI applications require tkinter.")
+        print("On Ubuntu/Debian: sudo apt-get install python3-tk")
+        print("On CentOS/RHEL: sudo yum install tkinter")
+        sys.exit(1)
     
     # Check if pyinstaller is installed
     try:
@@ -28,9 +40,8 @@ def main():
                               capture_output=True, text=True, check=True)
         print(result.stdout.strip())
     except (ImportError, subprocess.CalledProcessError):
-        print("❌ PyInstaller not found. Installing...")
-        subprocess.run([python_cmd, "-m", "pip", "install", "--user", "pyinstaller"], check=True)
-        print("✅ PyInstaller installed")
+        print("❌ PyInstaller not found. It should be installed via requirements.txt")
+        sys.exit(1)
     
     # Check if Pillow is installed
     try:
@@ -38,9 +49,8 @@ def main():
                               capture_output=True, text=True, check=True)
         print(result.stdout.strip())
     except (ImportError, subprocess.CalledProcessError):
-        print("❌ Pillow not found. Installing...")
-        subprocess.run([python_cmd, "-m", "pip", "install", "--user", "pillow"], check=True)
-        print("✅ Pillow installed")
+        print("❌ Pillow not found. It should be installed via requirements.txt")
+        sys.exit(1)
     
     # Build the application
     print("\n🏗️  Building executable...")
@@ -51,13 +61,18 @@ def main():
         "--windowed",
         "--name", "SlideShow",
         "slideshow_gui.py",
-        "--noconfirm",
-        "--osx-bundle-identifier", "com.slideshow.app"
+        "--noconfirm"
     ]
     
-    # On macOS ARM64, ensure we build for the native architecture
-    if platform.system() == "Darwin" and platform.machine() == "arm64":
-        cmd.extend(["--target-arch", "arm64"])
+    # Platform-specific options
+    if platform.system() == "Darwin":
+        cmd.extend(["--osx-bundle-identifier", "com.slideshow.app"])
+        # On macOS ARM64, ensure we build for the native architecture
+        if platform.machine() == "arm64":
+            cmd.extend(["--target-arch", "arm64"])
+    elif platform.system() == "Linux":
+        # Add hidden imports that might be needed on Linux
+        cmd.extend(["--hidden-import", "PIL._tkinter_finder"])
     
     try:
         subprocess.run(cmd, check=True)
