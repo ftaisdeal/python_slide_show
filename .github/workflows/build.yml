@@ -8,6 +8,9 @@ on:
   release:
     types: [published]
 
+permissions:
+  contents: write # Required for uploading release assets
+
 jobs:
   build:
     runs-on: ${{ matrix.os }}
