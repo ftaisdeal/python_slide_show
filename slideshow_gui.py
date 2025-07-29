@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-GUI wrapper for the slideshow application
-Provides a simple interface to select directory and timing options
+SlideShow Application
+A unified interface for selecting directories and slideshow settings
 """
 
 import tkinter as tk
@@ -11,69 +11,141 @@ import sys
 import os
 from pathlib import Path
 
-class SlideshowLauncher:
+class SlideshowApp:
     def __init__(self):
         self.root = tk.Tk()
-        self.root.title("Photo Slideshow Launcher")
-        self.root.geometry("400x300")
+        self.root.title("SlideShow")
+        self.root.geometry("600x300")
         self.root.resizable(False, False)
+        
+        # Center the window
+        self.center_window()
         
         # Variables
         self.directory_var = tk.StringVar()
-        self.display_time_var = tk.StringVar(value="5.0")
-        self.dissolve_time_var = tk.StringVar(value="1.0")
+        self.display_time_var = tk.StringVar(value="5")
+        self.dissolve_time_var = tk.StringVar(value="1")
         
         self.setup_ui()
         
+    def validate_numeric_input(self, var_name):
+        """Validate that input is numeric, clear if not"""
+        def validate():
+            try:
+                value = getattr(self, var_name).get()
+                if value == "":  # Allow empty string
+                    return
+                float(value)  # Try to convert to number
+            except ValueError:
+                # If conversion fails, clear the field
+                getattr(self, var_name).set("")
+        return validate
+        
+    def center_window(self):
+        """Center the window on the screen"""
+        self.root.update_idletasks()
+        width = self.root.winfo_width()
+        height = self.root.winfo_height()
+        x = (self.root.winfo_screenwidth() // 2) - (width // 2)
+        y = (self.root.winfo_screenheight() // 2) - (height // 2)
+        self.root.geometry(f'{width}x{height}+{x}+{y}')
+        
     def setup_ui(self):
-        # Main frame
-        main_frame = ttk.Frame(self.root, padding="20")
+        # Main container with padding
+        main_frame = ttk.Frame(self.root, padding="30")
         main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
         
+        # Configure grid weights for centering
+        self.root.columnconfigure(0, weight=1)
+        self.root.rowconfigure(0, weight=1)
+        main_frame.columnconfigure(0, weight=1)
+        
         # Title
-        title_label = ttk.Label(main_frame, text="Photo Slideshow", 
-                               font=("Arial", 16, "bold"))
-        title_label.grid(row=0, column=0, columnspan=3, pady=(0, 20))
+        title_label = ttk.Label(main_frame, text="SlideShow", 
+                               font=("Verdana", 24, "bold"))
+        title_label.grid(row=0, column=0, pady=(0, 30))
         
-        # Directory selection
-        ttk.Label(main_frame, text="Select Photo Directory:").grid(row=1, column=0, sticky=tk.W, pady=5)
-        
+        # Directory chooser frame
         dir_frame = ttk.Frame(main_frame)
-        dir_frame.grid(row=2, column=0, columnspan=3, sticky=(tk.W, tk.E), pady=5)
+        dir_frame.grid(row=1, column=0, sticky=(tk.W, tk.E), pady=(0, 20))
         
-        self.dir_entry = ttk.Entry(dir_frame, textvariable=self.directory_var, width=40)
-        self.dir_entry.grid(row=0, column=0, sticky=(tk.W, tk.E), padx=(0, 5))
+        # Directory selection section - all on one row
+        dir_label = ttk.Label(dir_frame, text="Image directory", 
+                             font=("Verdana", 14))
+        dir_label.grid(row=0, column=0, sticky=tk.W, padx=(0, 0))
         
-        ttk.Button(dir_frame, text="Browse...", 
-                  command=self.browse_directory).grid(row=0, column=1)
+        self.dir_entry = ttk.Entry(dir_frame, textvariable=self.directory_var, 
+                                  font=("Verdana", 14), width=32)
+        self.dir_entry.grid(row=0, column=1, sticky=tk.W, padx=(0, 0))
         
-        dir_frame.columnconfigure(0, weight=1)
+        browse_btn = ttk.Button(dir_frame, text="Browse...", 
+                               command=self.browse_directory)
+        browse_btn.grid(row=0, column=2)
         
-        # Timing options
-        ttk.Label(main_frame, text="Display Time (seconds):").grid(row=3, column=0, sticky=tk.W, pady=(20, 5))
-        ttk.Entry(main_frame, textvariable=self.display_time_var, width=10).grid(row=3, column=1, sticky=tk.W, pady=(20, 5))
+        # Settings section
+        settings_frame = ttk.Frame(main_frame, padding="20")
+        settings_frame.grid(row=2, column=0, sticky=(tk.W, tk.E), pady=(0, 0))
         
-        ttk.Label(main_frame, text="Dissolve Time (seconds):").grid(row=4, column=0, sticky=tk.W, pady=5)
-        ttk.Entry(main_frame, textvariable=self.dissolve_time_var, width=10).grid(row=4, column=1, sticky=tk.W, pady=5)
+        # Create inner frame to center the controls
+        inner_settings = ttk.Frame(settings_frame)
+        inner_settings.pack(anchor="center")
         
-        # Buttons
-        button_frame = ttk.Frame(main_frame)
-        button_frame.grid(row=5, column=0, columnspan=3, pady=(30, 0))
+        # Slide duration
+        ttk.Label(inner_settings, text="Slide duration", 
+                 font=("Verdana", 14)).grid(row=0, column=0, sticky=tk.E, pady=(0, 15), padx=(0, 5))
         
-        ttk.Button(button_frame, text="Start Slideshow", 
-                  command=self.start_slideshow).grid(row=0, column=0, padx=5)
-        ttk.Button(button_frame, text="Exit", 
-                  command=self.root.quit).grid(row=0, column=1, padx=5)
+        duration_entry = ttk.Entry(inner_settings, textvariable=self.display_time_var, 
+                                  font=("Verdana", 14), width=2)
+        duration_entry.grid(row=0, column=1, sticky=tk.W, pady=(0, 15), padx=(0, 20))
         
-        # Instructions
-        instructions = """Instructions:
-• Press Escape or 'q' to quit slideshow
-• Press Space to pause/resume
-• Use Left/Right arrows to navigate
-• Supports JPG, PNG, WebP, BMP, TIFF files"""
+        # Bind validation to slide duration field
+        self.display_time_var.trace_add('write', lambda *args: self.validate_numeric_input('display_time_var')())
         
-        ttk.Label(main_frame, text=instructions, 
-                 justify=tk.LEFT, font=("Arial", 9)).grid(row=6, column=0, columnspan=3, pady=(20, 0))
+        # Dissolve duration
+        ttk.Label(inner_settings, text="Dissolve duration", 
+                 font=("Verdana", 14)).grid(row=0, column=2, sticky=tk.E, pady=(0, 15), padx=(0, 5))
+        
+        dissolve_entry = ttk.Entry(inner_settings, textvariable=self.dissolve_time_var, 
+                                  font=("Verdana", 14), width=2)
+        dissolve_entry.grid(row=0, column=3, sticky=tk.W, pady=(0, 15), padx=(0, 0))
+        
+        # Bind validation to dissolve duration field
+        self.dissolve_time_var.trace_add('write', lambda *args: self.validate_numeric_input('dissolve_time_var')())
+        
+        # Start button - using Canvas for guaranteed green color
+        button_frame = tk.Frame(main_frame, bg="#90EE90", relief="raised", bd=3)
+        button_frame.grid(row=3, column=0, pady=(0, 20))
+        
+        start_btn = tk.Label(button_frame, text="START", 
+                            font=("Verdana", 14),
+                            bg="#88aa88",
+                            fg="black",
+                            padx=10,
+                            pady=8,
+                            cursor="hand2")
+        start_btn.pack()
+        
+        # Bind click events to make it act like a button
+        def on_click(event):
+            start_btn.configure(bg="#889988")  # Darker green when clicked
+            self.root.after(100, lambda: start_btn.configure(bg="#88aa88"))  # Return to normal
+            self.start_slideshow()
+        
+        def on_enter(event):
+            start_btn.configure(bg="#88bb88")  # Slightly lighter on hover
+        
+        def on_leave(event):
+            start_btn.configure(bg="#88aa88")  # Back to normal
+        
+        start_btn.bind("<Button-1>", on_click)
+        start_btn.bind("<Enter>", on_enter)
+        start_btn.bind("<Leave>", on_leave)
+        button_frame.bind("<Button-1>", on_click)
+        button_frame.bind("<Enter>", on_enter)
+        button_frame.bind("<Leave>", on_leave)
+        
+        # Configure ttk styles for other elements
+        style = ttk.Style()
         
     def browse_directory(self):
         desktop_path = os.path.expanduser("~/Desktop")
@@ -111,8 +183,8 @@ class SlideshowLauncher:
         self.root.withdraw()
         
         try:
-            # Run the slideshow
-            script_path = Path(__file__).parent / "slide_show.py"
+            # Run the slideshow using slide_show_gui.py directly
+            script_path = Path(__file__).parent / "slide_show_gui.py"
             cmd = [sys.executable, str(script_path), directory, 
                    str(display_time), str(dissolve_time)]
             
@@ -121,7 +193,7 @@ class SlideshowLauncher:
         except subprocess.CalledProcessError as e:
             messagebox.showerror("Error", f"Failed to start slideshow: {e}")
         except FileNotFoundError:
-            messagebox.showerror("Error", "slide_show.py not found")
+            messagebox.showerror("Error", "slide_show_gui.py not found")
         finally:
             # Show the launcher window again
             self.root.deiconify()
@@ -130,5 +202,5 @@ class SlideshowLauncher:
         self.root.mainloop()
 
 if __name__ == "__main__":
-    app = SlideshowLauncher()
+    app = SlideshowApp()
     app.run()

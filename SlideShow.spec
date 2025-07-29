@@ -2,7 +2,7 @@
 
 
 a = Analysis(
-    ['slide_show_gui.py'],
+    ['slideshow_gui.py'],
     pathex=[],
     binaries=[],
     datas=[],

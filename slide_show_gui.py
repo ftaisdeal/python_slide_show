@@ -2,7 +2,7 @@ import os
 import sys
 import platform
 from pathlib import Path
-from PIL import Image, ImageTk
+from PIL import Image, ImageTk, ExifTags
 import tkinter as tk
 from tkinter import filedialog, messagebox, simpledialog
 import locale
@@ -31,6 +31,37 @@ def get_image_files(directory):
         files.sort(key=lambda x: x.name.lower())
     
     return files
+
+def apply_exif_orientation(image):
+    """Apply EXIF orientation to image if present"""
+    try:
+        # Get EXIF data
+        exif = image._getexif()
+        if exif is not None:
+            # Find orientation tag
+            for tag, value in exif.items():
+                if ExifTags.TAGS.get(tag) == 'Orientation':
+                    # Apply rotation based on orientation value
+                    if value == 2:
+                        image = image.transpose(Image.FLIP_LEFT_RIGHT)
+                    elif value == 3:
+                        image = image.rotate(180, expand=True)
+                    elif value == 4:
+                        image = image.transpose(Image.FLIP_TOP_BOTTOM)
+                    elif value == 5:
+                        image = image.transpose(Image.FLIP_LEFT_RIGHT).rotate(90, expand=True)
+                    elif value == 6:
+                        image = image.rotate(270, expand=True)
+                    elif value == 7:
+                        image = image.transpose(Image.FLIP_LEFT_RIGHT).rotate(270, expand=True)
+                    elif value == 8:
+                        image = image.rotate(90, expand=True)
+                    break
+    except (AttributeError, KeyError, TypeError):
+        # If there's any issue reading EXIF data, just return the original image
+        pass
+    
+    return image
 
 def get_directory_and_settings():
     """Show dialogs to get directory and timing settings"""
@@ -105,6 +136,10 @@ class FullscreenImageViewer:
     def prepare_canvas(self, img_path):
         """Resize image with aspect ratio, center it on transparent canvas"""
         img = Image.open(img_path).convert('RGBA')
+        
+        # Apply EXIF orientation before processing
+        img = apply_exif_orientation(img)
+        
         screen_width, screen_height = self.screen_size
         img_ratio = img.width / img.height
         screen_ratio = screen_width / screen_height

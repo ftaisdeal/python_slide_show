@@ -1,0 +1,95 @@
+name: Build SlideShow
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  release:
+    types: [published]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ["3.9", "3.10", "3.11"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Build with PyInstaller
+        run: |
+          python build.py
+
+      - name: Create artifact name
+        id: artifact
+        shell: bash
+        run: |
+          OS_NAME="${{ matrix.os }}"
+          if [[ "$OS_NAME" == "ubuntu-latest" ]]; then
+            OS_NAME="linux"
+          elif [[ "$OS_NAME" == "windows-latest" ]]; then
+            OS_NAME="windows"
+          elif [[ "$OS_NAME" == "macos-latest" ]]; then
+            OS_NAME="macos"
+          fi
+          echo "name=SlideShow-${OS_NAME}-python${{ matrix.python-version }}" >> $GITHUB_OUTPUT
+
+      - name: Upload artifacts (Linux/Windows)
+        if: matrix.os != 'macos-latest'
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ steps.artifact.outputs.name }}
+          path: |
+            dist/SlideShow/
+            !dist/SlideShow/**/*.pyc
+
+      - name: Upload artifacts (macOS)
+        if: matrix.os == 'macos-latest'
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ steps.artifact.outputs.name }}
+          path: |
+            dist/SlideShow.app/
+            !dist/SlideShow.app/**/*.pyc
+
+      # Only upload to release if this is a release event
+      - name: Upload to Release (Linux/Windows)
+        if: github.event_name == 'release' && matrix.os != 'macos-latest' && matrix.python-version == '3.11'
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: dist/SlideShow
+          asset_name: SlideShow-${{ matrix.os }}.zip
+          asset_content_type: application/zip
+
+      - name: Create macOS release archive
+        if: github.event_name == 'release' && matrix.os == 'macos-latest' && matrix.python-version == '3.11'
+        run: |
+          cd dist
+          zip -r SlideShow-macos.zip SlideShow.app
+
+      - name: Upload to Release (macOS)
+        if: github.event_name == 'release' && matrix.os == 'macos-latest' && matrix.python-version == '3.11'
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: dist/SlideShow-macos.zip
+          asset_name: SlideShow-macos.zip
+          asset_content_type: application/zip
