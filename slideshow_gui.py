@@ -96,9 +96,9 @@ class SlideshowApp:
         ttk.Label(inner_settings, text="Slide duration", 
                  font=("Verdana", 14)).grid(row=0, column=0, sticky=tk.E, pady=(0, 15), padx=(0, 5))
         
-        duration_entry = ttk.Entry(inner_settings, textvariable=self.display_time_var, 
-                                  font=("Verdana", 14), width=2)
-        duration_entry.grid(row=0, column=1, sticky=tk.W, pady=(0, 15), padx=(0, 20))
+        self.duration_entry = ttk.Entry(inner_settings, textvariable=self.display_time_var, 
+                                       font=("Verdana", 14), width=3)
+        self.duration_entry.grid(row=0, column=1, sticky=tk.W, pady=(0, 15), padx=(0, 20))
         
         # Bind validation to slide duration field
         self.display_time_var.trace_add('write', lambda *args: self.validate_numeric_input('display_time_var')())
@@ -107,9 +107,9 @@ class SlideshowApp:
         ttk.Label(inner_settings, text="Dissolve duration", 
                  font=("Verdana", 14)).grid(row=0, column=2, sticky=tk.E, pady=(0, 15), padx=(0, 5))
         
-        dissolve_entry = ttk.Entry(inner_settings, textvariable=self.dissolve_time_var, 
-                                  font=("Verdana", 14), width=2)
-        dissolve_entry.grid(row=0, column=3, sticky=tk.W, pady=(0, 15), padx=(0, 0))
+        self.dissolve_entry = ttk.Entry(inner_settings, textvariable=self.dissolve_time_var, 
+                                       font=("Verdana", 14), width=3)
+        self.dissolve_entry.grid(row=0, column=3, sticky=tk.W, pady=(0, 15), padx=(0, 0))
         
         # Bind validation to dissolve duration field
         self.dissolve_time_var.trace_add('write', lambda *args: self.validate_numeric_input('dissolve_time_var')())
@@ -168,9 +168,13 @@ class SlideshowApp:
             messagebox.showerror("Error", "Selected directory does not exist")
             return
         
+        # Store original string values for exact preservation
+        display_time_str = self.display_time_var.get().strip()
+        dissolve_time_str = self.dissolve_time_var.get().strip()
+        
         try:
-            display_time = float(self.display_time_var.get())
-            dissolve_time = float(self.dissolve_time_var.get())
+            display_time = float(display_time_str) if display_time_str else 5.0
+            dissolve_time = float(dissolve_time_str) if dissolve_time_str else 1.0
             
             if display_time <= 0:
                 raise ValueError("Display time must be positive")
@@ -181,12 +185,11 @@ class SlideshowApp:
             messagebox.showerror("Error", f"Invalid timing values: {e}")
             return
         
-        # Hide the launcher window
+        # Hide the launcher window (don't destroy it)
         self.root.withdraw()
         
         try:
             # Get image files from the directory first to validate
-            # Remove the import line that's no longer needed
             image_files = get_image_files(directory)
             if not image_files:
                 messagebox.showerror("Error", "No image files found in the selected directory.")
@@ -196,32 +199,24 @@ class SlideshowApp:
             print(f"Starting slideshow with {len(image_files)} images")
             print(f"Display time: {display_time}s, Dissolve time: {dissolve_time}s")
             
-            # Close the launcher window
-            self.root.quit()
-            self.root.destroy()
-            
-            # Launch slideshow directly
+            # Launch slideshow directly with reference to launcher
             display_time_ms = int(display_time * 1000)
             dissolve_time_ms = int(dissolve_time * 1000)
             
-            image_files = get_image_files(directory)
-            if not image_files:
-                messagebox.showerror("Error", "No image files found in the selected directory.")
-                return
-                
-            print(f"Starting slideshow with {len(image_files)} images")
-            print(f"Display time: {display_time}s, Dissolve time: {dissolve_time}s")
+            # Pass launcher app reference and current settings to slideshow
+            # Pass both numeric values and original string representations
+            FullscreenImageViewer(
+                image_files, 
+                display_time_ms, 
+                dissolve_time_ms,
+                launcher_app=self,
+                directory=directory,
+                display_time=display_time,
+                dissolve_time=dissolve_time,
+                display_time_str=display_time_str,
+                dissolve_time_str=dissolve_time_str
+            )
             
-            FullscreenImageViewer(image_files, display_time_ms, dissolve_time_ms)
-            
-        except ImportError as e:
-            error_msg = f"Failed to import slideshow module: {e}"
-            print(f"Error: {error_msg}")
-            try:
-                messagebox.showerror("Import Error", error_msg)
-            except:
-                print("Could not show error dialog")
-            self.root.deiconify()
         except Exception as e:
             error_msg = f"Failed to start slideshow: {e}"
             print(f"Error: {error_msg}")
@@ -229,10 +224,49 @@ class SlideshowApp:
                 messagebox.showerror("Slideshow Error", error_msg)
             except:
                 print("Could not show error dialog")
-            try:
-                self.root.deiconify()
-            except:
-                pass
+            self.root.deiconify()
+    
+    def format_number_for_display(self, value):
+        """Format a number for display, preserving integers as integers"""
+        if value == int(value):
+            return str(int(value))
+        else:
+            return str(value)
+    
+    def adjust_field_width(self, entry_widget, text_value):
+        """Adjust the width of an input field based on content length"""
+        # Calculate width: minimum of 2, maximum of 8, based on content length + 1 for padding
+        width = max(2, min(8, len(text_value) + 1))
+        entry_widget.config(width=width)
+    
+    def return_from_slideshow(self, directory, display_time, dissolve_time, 
+                            display_time_str="", dissolve_time_str=""):
+        """Called when returning from slideshow - restore settings and show launcher"""
+        # Restore the settings with proper formatting (preserve integers)
+        self.directory_var.set(directory)
+        
+        # Use original string values if available, otherwise format the numeric values
+        if display_time_str:
+            final_display_str = display_time_str
+        else:
+            final_display_str = self.format_number_for_display(display_time)
+        
+        if dissolve_time_str:
+            final_dissolve_str = dissolve_time_str
+        else:
+            final_dissolve_str = self.format_number_for_display(dissolve_time)
+        
+        self.display_time_var.set(final_display_str)
+        self.dissolve_time_var.set(final_dissolve_str)
+        
+        # Adjust field widths based on content
+        self.adjust_field_width(self.duration_entry, final_display_str)
+        self.adjust_field_width(self.dissolve_entry, final_dissolve_str)
+        
+        # Show the launcher window again
+        self.root.deiconify()
+        self.root.lift()
+        self.root.focus_force()
     
     def run(self):
         self.root.mainloop()
@@ -294,7 +328,9 @@ def apply_exif_orientation(image):
     return image
 
 class FullscreenImageViewer:
-    def __init__(self, image_files, display_time_ms=5000, dissolve_time_ms=1000, dissolve_frames=30):
+    def __init__(self, image_files, display_time_ms=5000, dissolve_time_ms=1000, dissolve_frames=30, 
+                 launcher_app=None, directory=None, display_time=None, dissolve_time=None,
+                 display_time_str="", dissolve_time_str=""):
         self.image_files = image_files
         self.display_time_ms = display_time_ms
         self.dissolve_time_ms = dissolve_time_ms
@@ -304,10 +340,26 @@ class FullscreenImageViewer:
         self.dissolve_id = None
         self.paused = False
         
-        # Create and configure the root window
-        self.root = tk.Tk()
+        # Store launcher app reference and settings for returning
+        self.launcher_app = launcher_app
+        self.directory = directory
+        self.display_time = display_time
+        self.dissolve_time = dissolve_time
+        self.display_time_str = display_time_str
+        self.dissolve_time_str = dissolve_time_str
+        
+        # Create and configure the root window - use Toplevel if launcher exists
+        if launcher_app and launcher_app.root.winfo_exists():
+            self.root = tk.Toplevel(launcher_app.root)
+        else:
+            self.root = tk.Tk()
+        
         self.root.attributes('-fullscreen', True)
         self.root.config(cursor="none", bg='black')
+        
+        # Ensure the slideshow window is on top
+        self.root.lift()
+        self.root.attributes('-topmost', True)
         
         # Create the label for displaying images
         self.label = tk.Label(self.root, bg='black')
@@ -328,8 +380,7 @@ class FullscreenImageViewer:
         self.root.bind("<Right>", self.next_image)
         self.root.bind("<Left>", self.prev_image)
         self.root.bind("<space>", self.toggle_pause)
-        self.root.bind("<Escape>", self.quit_app)
-        self.root.bind("q", self.quit_app)
+        self.root.bind("<Escape>", self.return_to_launcher)
         
         # Show first image and start slideshow
         self.root.focus_force()  # Ensure window has focus
@@ -339,14 +390,19 @@ class FullscreenImageViewer:
         self.root.mainloop()
 
     def prepare_canvas(self, img_path):
-        """Resize image with aspect ratio, center it on transparent canvas"""
+        """Resize image with aspect ratio, center it on black canvas"""
         try:
             print(f"Loading image: {img_path}")
-            img = Image.open(img_path).convert('RGBA')
-            print(f"Image loaded successfully: {img.size}")
+            img = Image.open(img_path)
+            print(f"Image loaded successfully: {img.size}, mode: {img.mode}")
             
             # Apply EXIF orientation before processing
             img = apply_exif_orientation(img)
+            
+            # Convert to RGB for consistent handling
+            if img.mode != 'RGB':
+                print(f"Converting from {img.mode} to RGB")
+                img = img.convert('RGB')
             
             screen_width, screen_height = self.screen_size
             img_ratio = img.width / img.height
@@ -359,19 +415,24 @@ class FullscreenImageViewer:
                 new_height = screen_height
                 new_width = int(screen_height * img_ratio)
 
+            print(f"Resizing to: {new_width}x{new_height}")
             img = img.resize((new_width, new_height), Image.LANCZOS)
-            canvas = Image.new('RGBA', (screen_width, screen_height), (0, 0, 0, 255))
+            
+            # Create RGB canvas (not RGBA)
+            canvas = Image.new('RGB', (screen_width, screen_height), (0, 0, 0))
             offset_x = (screen_width - new_width) // 2
             offset_y = (screen_height - new_height) // 2
             canvas.paste(img, (offset_x, offset_y))
-            print(f"Canvas prepared successfully: {canvas.size}")
+            print(f"Canvas prepared successfully: {canvas.size}, mode: {canvas.mode}")
             return canvas
         except Exception as e:
             print(f"Error loading image {img_path}: {e}")
+            import traceback
+            traceback.print_exc()
             # Return a black canvas if image loading fails
             screen_width, screen_height = self.screen_size
             print(f"Creating fallback black canvas: {screen_width}x{screen_height}")
-            return Image.new('RGBA', (screen_width, screen_height), (0, 0, 0, 255))
+            return Image.new('RGB', (screen_width, screen_height), (0, 0, 0))
 
     def show_image(self, idx, dissolve=True):
         print(f"Showing image {idx + 1}/{len(self.image_files)}: {self.image_files[idx]}")
@@ -412,8 +473,13 @@ class FullscreenImageViewer:
     def safe_create_photoimage(self, pil_image):
         """Safely create a PhotoImage from PIL Image"""
         try:
-            # Convert to RGB if needed  
-            if pil_image.mode != 'RGB':
+            # Convert to RGB mode for better compatibility
+            if pil_image.mode == 'RGBA':
+                # Create a white background and paste the RGBA image
+                rgb_img = Image.new('RGB', pil_image.size, (0, 0, 0))
+                rgb_img.paste(pil_image, mask=pil_image.split()[-1] if len(pil_image.split()) == 4 else None)
+                pil_image = rgb_img
+            elif pil_image.mode != 'RGB':
                 pil_image = pil_image.convert('RGB')
             
             # Create PhotoImage using ImageTk
@@ -421,11 +487,12 @@ class FullscreenImageViewer:
             return photo
         except Exception as e:
             print(f"Failed to create PhotoImage: {e}")
-            # Create a black fallback image
+            # Create a simple black fallback image
             try:
                 black_img = Image.new('RGB', self.screen_size, (0, 0, 0))
                 return ImageTk.PhotoImage(black_img)
-            except:
+            except Exception as fallback_error:
+                print(f"Failed to create fallback image: {fallback_error}")
                 return None
 
     def _dissolve_images(self):
@@ -495,35 +562,39 @@ class FullscreenImageViewer:
             
             print("PhotoImage created successfully")
             
-            # Store multiple references to prevent garbage collection
+            # Clear any existing image first
+            self.label.configure(image='')
+            
+            # Store the reference in multiple places to prevent garbage collection
             self.photo = photo
             self.current_photo = photo
-            self.label.image = photo
+            self.label.image = photo  # This is critical for keeping the reference
             
             # Update the label display
             print("Updating label...")
-            self.label.config(image=photo)
+            self.label.configure(image=photo)
             
-            # Force immediate update
-            self.label.update_idletasks()
-            self.root.update_idletasks()
+            # Force update
+            print("Forcing display update...")
+            self.label.update()
+            self.root.update()
             print("Image display completed")
             
         except Exception as e:
             print(f"Error displaying image: {e}")
-            # Try to display a black screen if image display fails
+            import traceback
+            traceback.print_exc()
+            # Try to display a simple black screen
             try:
-                black_img = Image.new('RGB', self.screen_size, (0, 0, 0))
-                fallback_photo = self.safe_create_photoimage(black_img)
-                if fallback_photo:
-                    self.photo = fallback_photo
-                    self.current_photo = fallback_photo
-                    self.label.image = fallback_photo
-                    self.label.config(image=fallback_photo)
-                    self.label.update_idletasks()
-                    print("Fallback black image displayed")
+                print("Attempting fallback display...")
+                self.label.configure(image='', bg='black')
+                self.label.image = None
+                self.photo = None
+                self.current_photo = None
+                self.root.update()
+                print("Fallback black screen displayed")
             except Exception as fallback_error:
-                print(f"Error creating fallback image: {fallback_error}")
+                print(f"Error with fallback display: {fallback_error}")
 
     def next_image(self, event=None):
         if self.dissolving:
@@ -553,12 +624,43 @@ class FullscreenImageViewer:
             # Resume by setting a new timer
             self.timer_id = self.root.after(self.display_time_ms, self.next_image)
 
-    def quit_app(self, event=None):
+    def return_to_launcher(self, event=None):
+        """Return to launcher with current settings"""
         if self.timer_id:
             self.root.after_cancel(self.timer_id)
         if self.dissolve_id:
             self.root.after_cancel(self.dissolve_id)
+        
+        # Destroy the slideshow window
         self.root.destroy()
+        
+        # If we have a launcher app reference, return to it with current settings
+        if self.launcher_app:
+            self.launcher_app.return_from_slideshow(
+                self.directory, 
+                self.display_time, 
+                self.dissolve_time,
+                self.display_time_str,
+                self.dissolve_time_str
+            )
+
+    def quit_app(self, event=None):
+        """Completely quit the application"""
+        if self.timer_id:
+            self.root.after_cancel(self.timer_id)
+        if self.dissolve_id:
+            self.root.after_cancel(self.dissolve_id)
+        
+        # Destroy the slideshow window
+        self.root.destroy()
+        
+        # If we have a launcher app, also quit that
+        if self.launcher_app:
+            try:
+                self.launcher_app.root.quit()
+                self.launcher_app.root.destroy()
+            except:
+                pass
 
 if __name__ == "__main__":
     app = SlideshowApp()

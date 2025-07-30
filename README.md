@@ -2,7 +2,19 @@
 
 A cross-platform full-screen photo slideshow application with smooth dissolve transitions.
 
-![Platform Support](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-blue)
+![Platform Support](https:/## Keyboard Controls
+
+| Key | Action |
+|-----|--------|
+| `Right Arrow` | Next image |
+| `Left Arrow` | Previous image |
+| `Space` | Pause/Resume |
+| `Escape` | Return to launcher (or quit if launched from command line) |
+
+**To quit the application:**
+- **macOS**: `Cmd+Q` or SlideShow menu → Quit
+- **Windows**: Click the X button, Alt+F4, or File menu → Exit  
+- **Linux**: `Ctrl+Q` or application menu → Quitelds.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-blue)
 ![Python](https://img.shields.io/badge/Python-3.8%2B-green)
 ![License](https://img.shields.io/badge/License-CC%20BY--NC%204.0-orange)
 
