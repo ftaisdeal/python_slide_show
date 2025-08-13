@@ -76,7 +76,7 @@ class FullscreenImageViewer:
         canvas = Image.new('RGBA', (screen_width, screen_height), (0, 0, 0, 255))
         offset_x = (screen_width - new_width) // 2
         offset_y = (screen_height - new_height) // 2
-        canvas.paste(img, (offset_x, offset_y))
+        canvas.paste(img, (offset_x, offset_y), mask=img)
         return canvas
 
     def show_image(self, idx, dissolve=True):

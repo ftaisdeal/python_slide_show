@@ -393,17 +393,10 @@ class FullscreenImageViewer:
         """Resize image with aspect ratio, center it on black canvas"""
         try:
             print(f"Loading image: {img_path}")
-            img = Image.open(img_path)
+            img = Image.open(img_path).convert('RGBA')
             print(f"Image loaded successfully: {img.size}, mode: {img.mode}")
-            
             # Apply EXIF orientation before processing
             img = apply_exif_orientation(img)
-            
-            # Convert to RGB for consistent handling
-            if img.mode != 'RGB':
-                print(f"Converting from {img.mode} to RGB")
-                img = img.convert('RGB')
-            
             screen_width, screen_height = self.screen_size
             img_ratio = img.width / img.height
             screen_ratio = screen_width / screen_height
@@ -417,12 +410,11 @@ class FullscreenImageViewer:
 
             print(f"Resizing to: {new_width}x{new_height}")
             img = img.resize((new_width, new_height), Image.LANCZOS)
-            
-            # Create RGB canvas (not RGBA)
-            canvas = Image.new('RGB', (screen_width, screen_height), (0, 0, 0))
+            # Create RGBA canvas (black background)
+            canvas = Image.new('RGBA', (screen_width, screen_height), (0, 0, 0, 255))
             offset_x = (screen_width - new_width) // 2
             offset_y = (screen_height - new_height) // 2
-            canvas.paste(img, (offset_x, offset_y))
+            canvas.paste(img, (offset_x, offset_y), mask=img)
             print(f"Canvas prepared successfully: {canvas.size}, mode: {canvas.mode}")
             return canvas
         except Exception as e:
