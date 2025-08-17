@@ -12,161 +12,42 @@ import platform
 import locale
 from pathlib import Path
 from PIL import Image, ImageTk, ExifTags
-
 class SlideshowApp:
-    def __init__(self):
-        self.root = tk.Tk()
-        self.root.title("SlideShow")
-        self.root.geometry("800x400")
-        self.root.resizable(False, False)
-        
-        # Center the window
-        self.center_window()
-        
-        # Config file path in project folder
-        self.config_path = os.path.join(os.path.dirname(__file__), "slideshow_config.txt")
-        
-        # Variables
-        self.directory_var = tk.StringVar()
-        self.display_time_var = tk.StringVar(value="5")
-        self.dissolve_time_var = tk.StringVar(value="1")
-        
-        self.load_last_directory()
-        self.setup_ui()
-        
-    def validate_numeric_input(self, var_name):
-        """Validate that input is numeric, clear if not"""
-        def validate():
+    def update_thumbnails(self):
+        # Clear previous thumbnails
+        for widget in self.thumbnail_frame.winfo_children():
+            widget.destroy()
+        self.thumbnails = []
+        directory = self.directory_var.get().strip()
+        if not directory or not os.path.exists(directory):
+            return
+        image_files = get_image_files(directory)
+        for idx, img_path in enumerate(image_files):
             try:
-                value = getattr(self, var_name).get()
-                if value == "":  # Allow empty string
-                    return
-                float(value)  # Try to convert to number
-            except ValueError:
-                # If conversion fails, clear the field
-                getattr(self, var_name).set("")
-        return validate
-        
-    def center_window(self):
-        """Center the window on the screen"""
-        self.root.update_idletasks()
-        width = self.root.winfo_width()
-        height = self.root.winfo_height()
-        x = (self.root.winfo_screenwidth() // 2) - (width // 2)
-        y = (self.root.winfo_screenheight() // 2) - (height // 2) -200
-        self.root.geometry(f'{width}x{height}+{x}+{y}')
-        
-    def setup_ui(self):
-        # Main container with padding
-        main_frame = ttk.Frame(self.root, padding="30")
-        main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
-        
-        # Configure grid weights for centering
-        self.root.columnconfigure(0, weight=1)
-        self.root.rowconfigure(0, weight=1)
-        main_frame.columnconfigure(0, weight=1)
-        
-        # Title
-        title_label = ttk.Label(main_frame, text="SlideShow", 
-                               font=("Verdana", 24, "bold"))
-        title_label.grid(row=0, column=0, pady=(0, 30))
-        
-        # Directory chooser frame
-        dir_frame = ttk.Frame(main_frame)
-        dir_frame.grid(row=1, column=0, sticky="ew", pady=(0, 20))
-        dir_frame.columnconfigure(0, weight=1)
-        dir_frame.columnconfigure(1, weight=1)
-        dir_frame.columnconfigure(2, weight=1)
-        # Directory selection section - all on one row
-        dir_label = ttk.Label(dir_frame, text="Image directory", font=("Verdana", 14))
-        dir_label.grid(row=0, column=0, sticky="e", padx=(0, 0))
-        self.dir_entry = ttk.Entry(dir_frame, textvariable=self.directory_var, font=("Verdana", 14), width=36)
-        self.dir_entry.grid(row=0, column=1, sticky="ew", padx=(0, 0))
-        browse_btn = ttk.Button(dir_frame, text="Browse...", command=self.browse_directory)
-        browse_btn.grid(row=0, column=2, sticky="w")
-        
-        # Settings section
-        settings_frame = ttk.Frame(main_frame, padding="20")
-        settings_frame.grid(row=2, column=0, sticky=(tk.W, tk.E), pady=(0, 0))
-        
-        # Create inner frame to center the controls
-        inner_settings = ttk.Frame(settings_frame)
-        inner_settings.pack(anchor="center")
-        
-        # Slide duration
-        ttk.Label(inner_settings, text="Slide duration", 
-                 font=("Verdana", 14)).grid(row=0, column=0, sticky=tk.E, pady=(0, 15), padx=(0, 5))
-        
-        self.duration_entry = ttk.Entry(inner_settings, textvariable=self.display_time_var, 
-                                       font=("Verdana", 14), width=3)
-        self.duration_entry.grid(row=0, column=1, sticky=tk.W, pady=(0, 15), padx=(0, 20))
-        
-        # Bind validation to slide duration field
-        self.display_time_var.trace_add('write', lambda *args: self.validate_numeric_input('display_time_var')())
-        
-        # Dissolve duration
-        ttk.Label(inner_settings, text="Dissolve duration", 
-                 font=("Verdana", 14)).grid(row=0, column=2, sticky=tk.E, pady=(0, 15), padx=(0, 5))
-        
-        self.dissolve_entry = ttk.Entry(inner_settings, textvariable=self.dissolve_time_var, 
-                                       font=("Verdana", 14), width=3)
-        self.dissolve_entry.grid(row=0, column=3, sticky=tk.W, pady=(0, 15), padx=(0, 0))
-        
-        # Bind validation to dissolve duration field
-        self.dissolve_time_var.trace_add('write', lambda *args: self.validate_numeric_input('dissolve_time_var')())
-        
-        # Start button - using Canvas for guaranteed green color
-        button_frame = tk.Frame(main_frame, bg="#90EE90", relief="raised", bd=3)
-        button_frame.grid(row=3, column=0, pady=(0, 20))
-        
-        start_btn = tk.Label(button_frame, text="START", 
-                            font=("Verdana", 14),
-                            bg="#88aa88",
-                            fg="black",
-                            padx=10,
-                            pady=8,
-                            cursor="hand2")
-        start_btn.pack()
-        
-        # Bind click events to make it act like a button
-        def on_click(event):
-            start_btn.configure(bg="#889988")  # Darker green when clicked
-            self.root.after(100, lambda: start_btn.configure(bg="#88aa88"))  # Return to normal
-            self.start_slideshow()
-        
-        def on_enter(event):
-            start_btn.configure(bg="#88bb88")  # Slightly lighter on hover
-        
-        def on_leave(event):
-            start_btn.configure(bg="#88aa88")  # Back to normal
-        
-        start_btn.bind("<Button-1>", on_click)
-        start_btn.bind("<Enter>", on_enter)
-        start_btn.bind("<Leave>", on_leave)
-        button_frame.bind("<Button-1>", on_click)
-        button_frame.bind("<Enter>", on_enter)
-        button_frame.bind("<Leave>", on_leave)
-        
-        # Configure ttk styles for other elements
-        style = ttk.Style()
-        
-    def load_last_directory(self):
-        if os.path.exists(self.config_path):
-            try:
-                with open(self.config_path, "r") as f:
-                    last_dir = f.read().strip()
-                    if last_dir:
-                        self.directory_var.set(last_dir)
+                img = Image.open(img_path)
+                img.thumbnail((96, 96))
+                thumb = ImageTk.PhotoImage(img)
+                if idx == self.selected_thumbnail_idx:
+                    lbl = tk.Label(self.thumbnail_frame, image=thumb, bd=2, relief="solid", bg="#444",
+                                   highlightthickness=1, highlightbackground="white", highlightcolor="white")
+                else:
+                    lbl = tk.Label(self.thumbnail_frame, image=thumb, bd=2, relief="flat", bg="#222",
+                                   highlightthickness=0, highlightbackground="#222", highlightcolor="#222")
+                lbl.image = thumb
+                lbl.grid(row=idx, column=0, pady=2, padx=2, sticky="e")
+                lbl.bind("<Button-1>", lambda e, i=idx: self.on_thumbnail_click(i))
+                self.thumbnails.append(lbl)
             except Exception as e:
-                print(f"Could not load last directory: {e}")
-    
-    def save_last_directory(self, directory):
-        try:
-            with open(self.config_path, "w") as f:
-                f.write(directory)
-        except Exception as e:
-            print(f"Could not save directory: {e}")
-    
+                print(f"Error loading thumbnail for {img_path}: {e}")
+
+    def on_thumbnail_click(self, idx):
+        self.selected_thumbnail_idx = idx
+        for i, lbl in enumerate(self.thumbnails):
+            if i == idx:
+                lbl.config(relief="solid", bd=2, bg="#444", highlightthickness=1, highlightbackground="white", highlightcolor="white")
+            else:
+                lbl.config(relief="flat", bd=2, bg="#222", highlightthickness=0, highlightbackground="#222", highlightcolor="#222")
+        self.thumbnail_frame.update_idletasks()
     def browse_directory(self):
         desktop_path = os.path.expanduser("~/Desktop")
         directory = filedialog.askdirectory(
@@ -176,75 +57,160 @@ class SlideshowApp:
         if directory:
             self.directory_var.set(directory)
             self.save_last_directory(directory)
-    
+            self.update_thumbnails()
+    def save_last_directory(self, directory):
+        """Save the last selected directory to config file"""
+        try:
+            with open(self.config_path, "w") as f:
+                f.write(directory)
+        except Exception as e:
+            print(f"Could not save last directory: {e}")
+    def load_last_directory(self):
+        if os.path.exists(self.config_path):
+            try:
+                with open(self.config_path, "r") as f:
+                    last_dir = f.read().strip()
+                    if last_dir:
+                        self.directory_var.set(last_dir)
+            except Exception as e:
+                print(f"Could not load last directory: {e}")
+    def __init__(self):
+        self.root = tk.Tk()
+        self.root.title("SlideShow")
+        self.root.geometry("680x500")
+        self.root.resizable(False, False)
+        self.center_window()
+        self.config_path = os.path.join(os.path.dirname(__file__), "slideshow_config.txt")
+        self.directory_var = tk.StringVar()
+        self.display_time_var = tk.StringVar(value="5")
+        self.dissolve_time_var = tk.StringVar(value="1")
+        self.selected_thumbnail_idx = None
+        self.load_last_directory()
+        self.setup_ui()
+        initial_dir = self.directory_var.get().strip()
+        if initial_dir:
+            self.update_thumbnails()
+
+    def center_window(self):
+        self.root.update_idletasks()
+        w = self.root.winfo_width()
+        h = self.root.winfo_height()
+        ws = self.root.winfo_screenwidth()
+        hs = self.root.winfo_screenheight()
+        x = (ws // 2) - (w // 2)
+        y = (hs // 2) - (h // 2) -200
+        self.root.geometry(f'{w}x{h}+{x}+{y}')
+
+    def validate_numeric_input(self, var_name):
+        def validate():
+            try:
+                value = getattr(self, var_name).get()
+                if value == "":
+                    return
+                float(value)
+            except ValueError:
+                getattr(self, var_name).set("")
+        return validate
+
+    def setup_ui(self):
+        main_frame = ttk.Frame(self.root, padding="0")
+        main_frame.grid(row=0, column=0, sticky="nw")
+        self.root.columnconfigure(0, weight=1)
+        self.root.rowconfigure(0, weight=1)
+        main_frame.columnconfigure(0, weight=1)
+
+        thumb_panel = tk.Frame(main_frame)
+        thumb_panel.grid(row=0, column=0, rowspan=4, sticky="nsw", padx=(0, 20))
+        self.thumbnail_canvas = tk.Canvas(thumb_panel, width=106, height=500, bg="#000", highlightthickness=0, bd=0)
+        self.thumbnail_canvas.grid(row=0, column=0, sticky="nsw")
+        self.thumbnail_scrollbar = tk.Scrollbar(thumb_panel, orient="vertical", command=self.thumbnail_canvas.yview)
+        self.thumbnail_scrollbar.grid(row=0, column=1, sticky="nsw")
+        self.thumbnail_canvas.configure(yscrollcommand=self.thumbnail_scrollbar.set)
+        self.thumbnail_frame = tk.Frame(self.thumbnail_canvas, bg="#222")
+        self.thumbnail_canvas.create_window((0, 0), window=self.thumbnail_frame, anchor="nw")
+        self.thumbnail_frame.bind("<Configure>", lambda e: self.thumbnail_canvas.configure(scrollregion=self.thumbnail_canvas.bbox("all")))
+
+        title_label = ttk.Label(main_frame, text="SlideShow", font=("Verdana", 24, "bold"))
+        title_label.grid(row=0, column=1, pady=(0, 0))
+
+        dir_frame = ttk.Frame(main_frame)
+        dir_frame.grid(row=1, column=1, sticky="ew", pady=(0, 0))
+        dir_frame.columnconfigure(0, weight=1)
+        dir_frame.columnconfigure(1, weight=1)
+        dir_frame.columnconfigure(2, weight=1)
+        dir_label = ttk.Label(dir_frame, text="Browse to the directory containing your images", font=("Verdana", 14))
+        dir_label.grid(row=0, column=0, columnspan=3, sticky="w", padx=(0, 0), pady=(0, 0))
+        self.dir_entry = ttk.Entry(dir_frame, textvariable=self.directory_var, font=("Verdana", 14), width=40)
+        self.dir_entry.grid(row=1, column=0, columnspan=2, sticky="ew", padx=(2, 0))
+        browse_btn = ttk.Button(dir_frame, text="Browse...", command=self.browse_directory)
+        browse_btn.grid(row=1, column=2, sticky="w")
+
+        settings_frame = ttk.Frame(main_frame, padding="20")
+        settings_frame.grid(row=2, column=1, sticky=(tk.W, tk.E), pady=(0, 0))
+        inner_settings = ttk.Frame(settings_frame)
+        inner_settings.pack(anchor="center")
+        ttk.Label(inner_settings, text="Slide duration", font=("Verdana", 14)).grid(row=0, column=0, sticky=tk.E, pady=(0, 2), padx=(0, 5))
+        self.duration_entry = ttk.Entry(inner_settings, textvariable=self.display_time_var, font=("Verdana", 14), width=5)
+        self.duration_entry.grid(row=0, column=1, sticky="ew", padx=(0, 5))
+        self.duration_entry.bind("<FocusOut>", self.validate_numeric_input("display_time_var"))
+        ttk.Label(inner_settings, text="Dissolve duration", font=("Verdana", 14)).grid(row=1, column=0, sticky=tk.E, pady=(0, 2), padx=(0, 5))
+        self.dissolve_entry = ttk.Entry(inner_settings, textvariable=self.dissolve_time_var, font=("Verdana", 14), width=5)
+        self.dissolve_entry.grid(row=1, column=1, sticky="ew", padx=(0, 5))
+        self.dissolve_entry.bind("<FocusOut>", self.validate_numeric_input("dissolve_time_var"))
+
+        # START button and its event handlers
+        button_frame = tk.Frame(settings_frame, bg="#88aa88", relief="flat", bd=0)
+        button_frame.pack(pady=(10, 0))
+        start_btn = tk.Label(button_frame, text="START", font=("Verdana", 14), bg="#88aa88", fg="black", padx=10, pady=8, cursor="hand2", relief="flat", bd=0)
+        start_btn.pack(pady=(0, 0))
+        def on_click(event):
+            start_btn.configure(bg="#889988")
+            self.root.after(100, lambda: start_btn.configure(bg="#88aa88"))
+            self.start_slideshow()
+        def on_enter(event):
+            start_btn.configure(bg="#88bb88")
+        def on_leave(event):
+            start_btn.configure(bg="#88aa88")
+        start_btn.bind("<Button-1>", on_click)
+        start_btn.bind("<Enter>", on_enter)
+        start_btn.bind("<Leave>", on_leave)
+
     def start_slideshow(self):
         directory = self.directory_var.get().strip()
-        self.save_last_directory(directory)
-        if not directory:
-            messagebox.showerror("Error", "Please select a directory")
+        if not directory or not os.path.exists(directory):
+            messagebox.showerror("Error", "Please select a valid image directory.")
             return
-        
-        if not os.path.exists(directory):
-            messagebox.showerror("Error", "Selected directory does not exist")
+        image_files = get_image_files(directory)
+        if not image_files:
+            messagebox.showerror("Error", "No images found in the selected directory.")
             return
-        
-        # Store original string values for exact preservation
-        display_time_str = self.display_time_var.get().strip()
-        dissolve_time_str = self.dissolve_time_var.get().strip()
-        
         try:
-            display_time = float(display_time_str) if display_time_str else 5.0
-            dissolve_time = float(dissolve_time_str) if dissolve_time_str else 1.0
-            
-            if display_time <= 0:
-                raise ValueError("Display time must be positive")
-            if dissolve_time < 0:
-                raise ValueError("Dissolve time must be non-negative")
-                
-        except ValueError as e:
-            messagebox.showerror("Error", f"Invalid timing values: {e}")
-            return
-        
-        # Hide the launcher window (don't destroy it)
+            display_time = float(self.display_time_var.get())
+        except ValueError:
+            display_time = 5
+        try:
+            dissolve_time = float(self.dissolve_time_var.get())
+        except ValueError:
+            dissolve_time = 1
+        # Hide launcher window
         self.root.withdraw()
+        # Determine starting index
+        start_idx = self.selected_thumbnail_idx if self.selected_thumbnail_idx is not None else 0
+        # Launch slideshow
+        FullscreenImageViewer(
+            image_files,
+            display_time_ms=int(display_time * 1000),
+            dissolve_time_ms=int(dissolve_time * 1000),
+            launcher_app=self,
+            directory=directory,
+            display_time=display_time,
+            dissolve_time=dissolve_time,
+            display_time_str=self.display_time_var.get(),
+            dissolve_time_str=self.dissolve_time_var.get(),
+            start_idx=start_idx
+        )
+
         
-        try:
-            # Get image files from the directory first to validate
-            image_files = get_image_files(directory)
-            if not image_files:
-                messagebox.showerror("Error", "No image files found in the selected directory.")
-                self.root.deiconify()
-                return
-            
-            print(f"Starting slideshow with {len(image_files)} images")
-            print(f"Display time: {display_time}s, Dissolve time: {dissolve_time}s")
-            
-            # Launch slideshow directly with reference to launcher
-            display_time_ms = int(display_time * 1000)
-            dissolve_time_ms = int(dissolve_time * 1000)
-            
-            # Pass launcher app reference and current settings to slideshow
-            # Pass both numeric values and original string representations
-            FullscreenImageViewer(
-                image_files, 
-                display_time_ms, 
-                dissolve_time_ms,
-                launcher_app=self,
-                directory=directory,
-                display_time=display_time,
-                dissolve_time=dissolve_time,
-                display_time_str=display_time_str,
-                dissolve_time_str=dissolve_time_str
-            )
-            
-        except Exception as e:
-            error_msg = f"Failed to start slideshow: {e}"
-            print(f"Error: {error_msg}")
-            try:
-                messagebox.showerror("Slideshow Error", error_msg)
-            except:
-                print("Could not show error dialog")
-            self.root.deiconify()
     
     def format_number_for_display(self, value):
         """Format a number for display, preserving integers as integers"""
@@ -350,12 +316,12 @@ def apply_exif_orientation(image):
 class FullscreenImageViewer:
     def __init__(self, image_files, display_time_ms=5000, dissolve_time_ms=1000, dissolve_frames=30, 
                  launcher_app=None, directory=None, display_time=None, dissolve_time=None,
-                 display_time_str="", dissolve_time_str=""):
+                 display_time_str="", dissolve_time_str="", start_idx=0):
         self.image_files = image_files
         self.display_time_ms = display_time_ms
         self.dissolve_time_ms = dissolve_time_ms
         self.dissolve_frames = dissolve_frames
-        self.img_idx = 0
+        self.img_idx = start_idx
         self.timer_id = None
         self.dissolve_id = None
         self.paused = False
