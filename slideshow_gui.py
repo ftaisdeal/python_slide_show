@@ -17,17 +17,21 @@ class SlideshowApp:
     def __init__(self):
         self.root = tk.Tk()
         self.root.title("SlideShow")
-        self.root.geometry("600x300")
+        self.root.geometry("800x400")
         self.root.resizable(False, False)
         
         # Center the window
         self.center_window()
+        
+        # Config file path in project folder
+        self.config_path = os.path.join(os.path.dirname(__file__), "slideshow_config.txt")
         
         # Variables
         self.directory_var = tk.StringVar()
         self.display_time_var = tk.StringVar(value="5")
         self.dissolve_time_var = tk.StringVar(value="1")
         
+        self.load_last_directory()
         self.setup_ui()
         
     def validate_numeric_input(self, var_name):
@@ -49,7 +53,7 @@ class SlideshowApp:
         width = self.root.winfo_width()
         height = self.root.winfo_height()
         x = (self.root.winfo_screenwidth() // 2) - (width // 2)
-        y = (self.root.winfo_screenheight() // 2) - (height // 2)
+        y = (self.root.winfo_screenheight() // 2) - (height // 2) -200
         self.root.geometry(f'{width}x{height}+{x}+{y}')
         
     def setup_ui(self):
@@ -69,20 +73,17 @@ class SlideshowApp:
         
         # Directory chooser frame
         dir_frame = ttk.Frame(main_frame)
-        dir_frame.grid(row=1, column=0, sticky=(tk.W, tk.E), pady=(0, 20))
-        
+        dir_frame.grid(row=1, column=0, sticky="ew", pady=(0, 20))
+        dir_frame.columnconfigure(0, weight=1)
+        dir_frame.columnconfigure(1, weight=1)
+        dir_frame.columnconfigure(2, weight=1)
         # Directory selection section - all on one row
-        dir_label = ttk.Label(dir_frame, text="Image directory", 
-                             font=("Verdana", 14))
-        dir_label.grid(row=0, column=0, sticky=tk.W, padx=(0, 0))
-        
-        self.dir_entry = ttk.Entry(dir_frame, textvariable=self.directory_var, 
-                                  font=("Verdana", 14), width=32)
-        self.dir_entry.grid(row=0, column=1, sticky=tk.W, padx=(0, 0))
-        
-        browse_btn = ttk.Button(dir_frame, text="Browse...", 
-                               command=self.browse_directory)
-        browse_btn.grid(row=0, column=2)
+        dir_label = ttk.Label(dir_frame, text="Image directory", font=("Verdana", 14))
+        dir_label.grid(row=0, column=0, sticky="e", padx=(0, 0))
+        self.dir_entry = ttk.Entry(dir_frame, textvariable=self.directory_var, font=("Verdana", 14), width=36)
+        self.dir_entry.grid(row=0, column=1, sticky="ew", padx=(0, 0))
+        browse_btn = ttk.Button(dir_frame, text="Browse...", command=self.browse_directory)
+        browse_btn.grid(row=0, column=2, sticky="w")
         
         # Settings section
         settings_frame = ttk.Frame(main_frame, padding="20")
@@ -149,6 +150,23 @@ class SlideshowApp:
         # Configure ttk styles for other elements
         style = ttk.Style()
         
+    def load_last_directory(self):
+        if os.path.exists(self.config_path):
+            try:
+                with open(self.config_path, "r") as f:
+                    last_dir = f.read().strip()
+                    if last_dir:
+                        self.directory_var.set(last_dir)
+            except Exception as e:
+                print(f"Could not load last directory: {e}")
+    
+    def save_last_directory(self, directory):
+        try:
+            with open(self.config_path, "w") as f:
+                f.write(directory)
+        except Exception as e:
+            print(f"Could not save directory: {e}")
+    
     def browse_directory(self):
         desktop_path = os.path.expanduser("~/Desktop")
         directory = filedialog.askdirectory(
@@ -157,9 +175,11 @@ class SlideshowApp:
         )
         if directory:
             self.directory_var.set(directory)
+            self.save_last_directory(directory)
     
     def start_slideshow(self):
         directory = self.directory_var.get().strip()
+        self.save_last_directory(directory)
         if not directory:
             messagebox.showerror("Error", "Please select a directory")
             return
