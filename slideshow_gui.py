@@ -80,9 +80,12 @@ class SlideshowApp:
         self.root.geometry("680x500")
         self.root.resizable(False, False)
         self.center_window()
-        self.config_path = os.path.join(os.path.dirname(__file__), "slideshow_config.txt")
+        # Store config in ~/Library/Application Support/SlideShow/
+        config_dir = os.path.expanduser("~/Library/Application Support/SlideShow")
+        os.makedirs(config_dir, exist_ok=True)
+        self.config_path = os.path.join(config_dir, "slideshow_config.txt")
         self.directory_var = tk.StringVar()
-        self.display_time_var = tk.StringVar(value="5")
+        self.display_time_var = tk.StringVar(value="10")
         self.dissolve_time_var = tk.StringVar(value="1")
         self.selected_thumbnail_idx = None
         self.load_last_directory()
@@ -142,6 +145,7 @@ class SlideshowApp:
         dir_label.grid(row=0, column=0, columnspan=3, sticky="w", padx=(0, 0), pady=(0, 0))
         self.dir_entry = ttk.Entry(dir_frame, textvariable=self.directory_var, font=("Verdana", 14), width=40)
         self.dir_entry.grid(row=1, column=0, columnspan=2, sticky="ew", padx=(2, 0))
+        self.dir_entry.bind("<Return>", lambda event: self.update_thumbnails())
         browse_btn = ttk.Button(dir_frame, text="Browse...", command=self.browse_directory)
         browse_btn.grid(row=1, column=2, sticky="w")
 
@@ -590,17 +594,17 @@ class FullscreenImageViewer:
         """Toggle pause/resume of the slideshow"""
         if self.dissolving:
             return
-        
+
         self.paused = not self.paused
-        
+
         if self.paused:
             # Cancel the timer if we're pausing
             if self.timer_id:
                 self.root.after_cancel(self.timer_id)
                 self.timer_id = None
         else:
-            # Resume by setting a new timer
-            self.timer_id = self.root.after(self.display_time_ms, self.next_image)
+            # Resume and immediately show the next image
+            self.next_image()
 
     def return_to_launcher(self, event=None):
         """Return to launcher with current settings"""
