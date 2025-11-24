@@ -679,8 +679,7 @@ class FullscreenImageViewer:
             if self.loop_enabled:
                 self.img_idx = 0  # Loop back to first image
             else:
-                # End of slideshow - return to launcher
-                self.return_to_launcher()
+                # End of slideshow - stay on last image (don't advance or set timer)
                 return
         else:
             self.img_idx += 1
