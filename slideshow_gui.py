@@ -28,26 +28,48 @@ class SlideshowApp:
                 img.thumbnail((96, 96))
                 thumb = ImageTk.PhotoImage(img)
                 if idx == self.selected_thumbnail_idx:
-                    lbl = tk.Label(self.thumbnail_frame, image=thumb, bd=2, relief="solid", bg="#444",
-                                   highlightthickness=1, highlightbackground="white", highlightcolor="white")
+                    # Create a white frame as border
+                    border_frame = tk.Frame(self.thumbnail_frame, bg="white", bd=0)
+                    border_frame.grid(row=idx, column=0, pady=2, padx=2, sticky="e")
+                    lbl = tk.Label(border_frame, image=thumb, relief="flat", bd=0, bg="#444")
+                    lbl.pack(padx=2, pady=2)  # This creates the white border effect
+                    lbl.bind("<Button-1>", lambda e, i=idx: self.on_thumbnail_click(i))
+                    self.thumbnails.append(lbl)
                 else:
-                    lbl = tk.Label(self.thumbnail_frame, image=thumb, bd=2, relief="flat", bg="#222",
-                                   highlightthickness=0, highlightbackground="#222", highlightcolor="#222")
+                    lbl = tk.Label(self.thumbnail_frame, image=thumb, relief="flat", bd=0, bg="#222")
+                    lbl.grid(row=idx, column=0, pady=2, padx=2, sticky="e")
+                    lbl.bind("<Button-1>", lambda e, i=idx: self.on_thumbnail_click(i))
+                    self.thumbnails.append(lbl)
                 lbl.image = thumb
-                lbl.grid(row=idx, column=0, pady=2, padx=2, sticky="e")
-                lbl.bind("<Button-1>", lambda e, i=idx: self.on_thumbnail_click(i))
-                self.thumbnails.append(lbl)
             except Exception as e:
                 print(f"Error loading thumbnail for {img_path}: {e}")
+        
+        # Update total time display when images change
+        self.update_total_time_display()
 
     def on_thumbnail_click(self, idx):
         self.selected_thumbnail_idx = idx
-        for i, lbl in enumerate(self.thumbnails):
-            if i == idx:
-                lbl.config(relief="solid", bd=2, bg="#444", highlightthickness=1, highlightbackground="white", highlightcolor="white")
-            else:
-                lbl.config(relief="flat", bd=2, bg="#222", highlightthickness=0, highlightbackground="#222", highlightcolor="#222")
+        # First, clear all existing thumbnails and recreate them with proper styling
+        self.update_thumbnails()
         self.thumbnail_frame.update_idletasks()
+    def on_directory_entry_change(self, event=None):
+        """Handle manual directory entry - validate, save, and update thumbnails"""
+        directory = self.directory_var.get().strip()
+        if directory and os.path.exists(directory) and os.path.isdir(directory):
+            # Valid directory - save it and update thumbnails
+            self.save_last_directory(directory)
+            self.update_thumbnails()
+        elif directory:
+            # Invalid directory - create a temporary style with red background
+            style = ttk.Style()
+            style.configure('Error.TEntry', fieldbackground='#ffe6e6')
+            self.dir_entry.configure(style='Error.TEntry')
+            # Revert to normal style after 1 second
+            self.root.after(1000, lambda: self.dir_entry.configure(style='TEntry'))
+        else:
+            # Empty directory - just update thumbnails (will clear them)
+            self.update_thumbnails()
+
     def browse_directory(self):
         desktop_path = os.path.expanduser("~/Desktop")
         directory = filedialog.askdirectory(
@@ -87,6 +109,7 @@ class SlideshowApp:
         self.directory_var = tk.StringVar()
         self.display_time_var = tk.StringVar(value="10")
         self.dissolve_time_var = tk.StringVar(value="1")
+        self.loop_var = tk.BooleanVar(value=True)  # Loop by default
         self.selected_thumbnail_idx = None
         self.load_last_directory()
         self.setup_ui()
@@ -145,9 +168,20 @@ class SlideshowApp:
         dir_label.grid(row=0, column=0, columnspan=3, sticky="w", padx=(0, 0), pady=(0, 0))
         self.dir_entry = ttk.Entry(dir_frame, textvariable=self.directory_var, font=("Verdana", 14), width=40)
         self.dir_entry.grid(row=1, column=0, columnspan=2, sticky="ew", padx=(2, 0))
-        self.dir_entry.bind("<Return>", lambda event: self.update_thumbnails())
+        self.dir_entry.bind("<Return>", self.on_directory_entry_change)
+        self.dir_entry.bind("<FocusOut>", self.on_directory_entry_change)
         browse_btn = ttk.Button(dir_frame, text="Browse...", command=self.browse_directory)
         browse_btn.grid(row=1, column=2, sticky="w")
+        
+        # Total time display
+        self.total_time_label = ttk.Label(dir_frame, text="", font=("Verdana", 11), foreground="#666")
+        self.total_time_label.grid(row=2, column=0, columnspan=3, sticky="w", padx=(2, 0), pady=(5, 0))
+        
+        # Loop checkbox
+        self.loop_checkbox = ttk.Checkbutton(dir_frame, text="Loop slideshow", variable=self.loop_var)
+        self.loop_checkbox.grid(row=3, column=0, columnspan=3, sticky="w", padx=(2, 0), pady=(5, 0))
+        
+        self.update_total_time_display()
 
         settings_frame = ttk.Frame(main_frame, padding="20")
         settings_frame.grid(row=2, column=1, sticky=(tk.W, tk.E), pady=(0, 0))
@@ -157,10 +191,12 @@ class SlideshowApp:
         self.duration_entry = ttk.Entry(inner_settings, textvariable=self.display_time_var, font=("Verdana", 14), width=5)
         self.duration_entry.grid(row=0, column=1, sticky="ew", padx=(0, 5))
         self.duration_entry.bind("<FocusOut>", self.validate_numeric_input("display_time_var"))
+        self.duration_entry.bind("<KeyRelease>", lambda e: self.root.after_idle(self.update_total_time_display))
         ttk.Label(inner_settings, text="Dissolve duration", font=("Verdana", 14)).grid(row=1, column=0, sticky=tk.E, pady=(0, 2), padx=(0, 5))
         self.dissolve_entry = ttk.Entry(inner_settings, textvariable=self.dissolve_time_var, font=("Verdana", 14), width=5)
         self.dissolve_entry.grid(row=1, column=1, sticky="ew", padx=(0, 5))
         self.dissolve_entry.bind("<FocusOut>", self.validate_numeric_input("dissolve_time_var"))
+        self.dissolve_entry.bind("<KeyRelease>", lambda e: self.root.after_idle(self.update_total_time_display))
 
         # START button and its event handlers
         button_frame = tk.Frame(settings_frame, bg="#88aa88", relief="flat", bd=0)
@@ -178,6 +214,60 @@ class SlideshowApp:
         start_btn.bind("<Button-1>", on_click)
         start_btn.bind("<Enter>", on_enter)
         start_btn.bind("<Leave>", on_leave)
+
+    def update_total_time_display(self):
+        """Calculate and display the total slideshow time"""
+        directory = self.directory_var.get().strip()
+        if not directory or not os.path.exists(directory):
+            self.total_time_label.config(text="")
+            return
+        
+        image_files = get_image_files(directory)
+        num_images = len(image_files)
+        
+        if num_images == 0:
+            self.total_time_label.config(text="No images found")
+            return
+        
+        try:
+            display_time = float(self.display_time_var.get()) if self.display_time_var.get() else 10.0
+        except ValueError:
+            display_time = 10.0
+            
+        try:
+            dissolve_time = float(self.dissolve_time_var.get()) if self.dissolve_time_var.get() else 1.0
+        except ValueError:
+            dissolve_time = 1.0
+        
+        # Calculate total time for one complete cycle
+        total_display_time = num_images * display_time
+        total_transition_time = num_images * dissolve_time
+        total_time = total_display_time + total_transition_time
+        
+        # Format the time display (round to nearest second)
+        total_time = round(total_time)
+        
+        if total_time < 60:
+            time_str = f"{total_time} seconds"
+        elif total_time < 3600:
+            minutes = int(total_time // 60)
+            seconds = int(total_time % 60)
+            if seconds == 0:
+                time_str = f"{minutes}m"
+            else:
+                time_str = f"{minutes}m {seconds}s"
+        else:
+            hours = int(total_time // 3600)
+            minutes = int((total_time % 3600) // 60)
+            seconds = int(total_time % 60)
+            if minutes == 0 and seconds == 0:
+                time_str = f"{hours}h"
+            elif seconds == 0:
+                time_str = f"{hours}h {minutes}m"
+            else:
+                time_str = f"{hours}h {minutes}m {seconds}s"
+        
+        self.total_time_label.config(text=f"Total slideshow time: {time_str} ({num_images} images)")
 
     def start_slideshow(self):
         directory = self.directory_var.get().strip()
@@ -211,7 +301,8 @@ class SlideshowApp:
             dissolve_time=dissolve_time,
             display_time_str=self.display_time_var.get(),
             dissolve_time_str=self.dissolve_time_var.get(),
-            start_idx=start_idx
+            start_idx=start_idx,
+            loop_enabled=self.loop_var.get()
         )
 
         
@@ -320,7 +411,7 @@ def apply_exif_orientation(image):
 class FullscreenImageViewer:
     def __init__(self, image_files, display_time_ms=5000, dissolve_time_ms=1000, dissolve_frames=30, 
                  launcher_app=None, directory=None, display_time=None, dissolve_time=None,
-                 display_time_str="", dissolve_time_str="", start_idx=0):
+                 display_time_str="", dissolve_time_str="", start_idx=0, loop_enabled=True):
         self.image_files = image_files
         self.display_time_ms = display_time_ms
         self.dissolve_time_ms = dissolve_time_ms
@@ -329,6 +420,7 @@ class FullscreenImageViewer:
         self.timer_id = None
         self.dissolve_id = None
         self.paused = False
+        self.loop_enabled = loop_enabled
         
         # Store launcher app reference and settings for returning
         self.launcher_app = launcher_app
@@ -581,13 +673,34 @@ class FullscreenImageViewer:
     def next_image(self, event=None):
         if self.dissolving:
             return
-        self.img_idx = (self.img_idx + 1) % len(self.image_files)
+        
+        # Check if we should loop or stop at the end
+        if self.img_idx >= len(self.image_files) - 1:
+            if self.loop_enabled:
+                self.img_idx = 0  # Loop back to first image
+            else:
+                # End of slideshow - return to launcher
+                self.return_to_launcher()
+                return
+        else:
+            self.img_idx += 1
+            
         self.show_image(self.img_idx, dissolve=True)
 
     def prev_image(self, event=None):
         if self.dissolving:
             return
-        self.img_idx = (self.img_idx - 1) % len(self.image_files)
+            
+        # Check if we should loop or stop at the beginning
+        if self.img_idx <= 0:
+            if self.loop_enabled:
+                self.img_idx = len(self.image_files) - 1  # Loop to last image
+            else:
+                # Beginning of slideshow - stay at first image
+                return
+        else:
+            self.img_idx -= 1
+            
         self.show_image(self.img_idx, dissolve=True)
 
     def toggle_pause(self, event=None):
