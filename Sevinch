@@ -1,0 +1,92 @@
+from pptx import Presentation
+from pptx.util import Inches, Pt
+from pptx.enum.text import PP_ALIGN
+from pptx.dml.color import RGBColor
+
+# --- Yordamchi funksiya: sarlavha + matn qo‘shish ---
+def create_slide(prs, title_text, body_text, bg_color):
+    slide_layout = prs.slide_layouts[6]  # blank layout
+    slide = prs.slides.add_slide(slide_layout)
+
+    # Fon rangi
+    background = slide.background
+    fill = background.fill
+    fill.solid()
+    fill.fore_color.rgb = RGBColor(*bg_color)
+
+    # Title textbox
+    left = Inches(0.5)
+    top = Inches(0.5)
+    width = Inches(12)
+    height = Inches(1.5)
+    title_box = slide.shapes.add_textbox(left, top, width, height)
+    tf = title_box.text_frame
+    tf.text = title_text
+    tf.paragraphs[0].alignment = PP_ALIGN.CENTER
+    tf.paragraphs[0].font.size = Pt(54)
+    tf.paragraphs[0].font.bold = True
+    tf.paragraphs[0].font.color.rgb = RGBColor(255, 255, 255)
+
+    # Body textbox
+    body_box = slide.shapes.add_textbox(Inches(1), Inches(2.5), Inches(10), Inches(4))
+    tf2 = body_box.text_frame
+    tf2.text = body_text
+    tf2.paragraphs[0].alignment = PP_ALIGN.CENTER
+    tf2.paragraphs[0].font.size = Pt(32)
+    tf2.paragraphs[0].font.color.rgb = RGBColor(240, 240, 240)
+
+# --- Asosiy taqdimotni yaratish ---
+prs = Presentation()
+
+# SLAYD 1
+create_slide(
+    prs,
+    "✦ O‘zbekiston Konstitutsiyasi ✦",
+    "Asosiy qonunimiz – xalqimizning erkinligi, huquq va manfaatlarining kafolati.",
+    bg_color=(0, 85, 164)
+)
+
+# SLAYD 2
+create_slide(
+    prs,
+    "📜 Konstitutsiyaning Mazmuni",
+    "Demokratiya, inson huquqlari, qonun ustuvorligi – Konstitutsiya asosiy tayanchlaridir.",
+    bg_color=(15, 100, 60)
+)
+
+# SLAYD 3
+create_slide(
+    prs,
+    "⚖️ Fuqarolarning Huquqlari",
+    "Har bir fuqaro so‘z erkinligi, ta'lim, mehnat va yashash huquqiga ega.",
+    bg_color=(120, 35, 70)
+)
+
+# SLAYD 4
+create_slide(
+    prs,
+    "🏛 Davlat Tuzilishi",
+    "Qonun chiqaruvchi, ijro hokimiyati va sud hokimiyati o‘zaro muvozanatda ishlaydi.",
+    bg_color=(180, 70, 20)
+)
+
+# SLAYD 5
+create_slide(
+    prs,
+    "🇺🇿 Mustaqillik va Konstitutsiya",
+    "Konstitutsiya – mustaqil O‘zbekistonning siyosiy tayanchi va huquqiy poydevori.",
+    bg_color=(20, 140, 160)
+)
+
+# SLAYD 6
+create_slide(
+    prs,
+    "🎉 Konstitutsiya Bayrami",
+    "Har yili 8-dekabr – yurtimizda Konstitutsiya qabul qilingan kun sifatida keng nishonlanadi.",
+    bg_color=(100, 20, 160)
+)
+
+# SAVE
+prs.save("Konstitutsiya_Bayrami_6_Slayd.pptx")
+
+print("Slayd tayyor! Fayl nomi: Konstitutsiya_Bayrami_6_Slayd.pptx")
