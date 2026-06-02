@@ -616,7 +616,7 @@ SUPPORTED FORMATS
 TIPS & TRICKS
   • The last selected directory is automatically remembered.
   • The settings for slide duration and dissolve duration are remembered.
-  • The total duration of the slideshow is calculated from the duration of each slide plus the duration of the dissolves and is displayed below the directory field.
+  • The total duration of the slideshow is calculated from the duration of each slide plus the duration of the dissolves.
   • If you select a thumbnail image the slide show will start from that image.
   • Images are displayed in your operating system's default sort order.
   • Large images are automatically resized to fit your screen while maintaining aspect ratio.
