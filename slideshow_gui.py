@@ -294,7 +294,7 @@ class SlideshowApp:
         
         # Number of images display
         self.num_images_label = ttk.Label(dir_frame, text="", font=("Verdana", 11), foreground="#666")
-        self.num_images_label.grid(row=2, column=0, columnspan=3, sticky="w", padx=(2, 0), pady=(5, 0))
+        self.num_images_label.grid(row=2, column=0, columnspan=3, sticky="w", padx=(2, 0), pady=(15, 0))
 
         # Total time display
         self.total_time_label = ttk.Label(dir_frame, text="", font=("Verdana", 11), foreground="#666")
@@ -302,7 +302,7 @@ class SlideshowApp:
         
         # Loop checkbox
         self.loop_checkbox = ttk.Checkbutton(dir_frame, text="Loop slideshow", variable=self.loop_var)
-        self.loop_checkbox.grid(row=4, column=0, columnspan=3, sticky="w", padx=(2, 0), pady=(5, 0))
+        self.loop_checkbox.grid(row=4, column=0, columnspan=3, sticky="w", padx=(2, 0), pady=(15, 0))
 
         # Show thumbnail numbers checkbox
         self.thumb_numbers_checkbox = ttk.Checkbutton(
@@ -585,42 +585,42 @@ class HelpDialog:
         help_text = """GETTING STARTED
 1. Select a directory containing your images using the "Browse..." button or by typing the path directly.
 2. Adjust slideshow settings:
-• Slide duration: How long each image is displayed (in seconds)
-• Dissolve duration: Time for transition between images (in seconds)
-• Loop: Whether to repeat the slideshow when it reaches the end
-• Image number: Whether to show the image number in the thumbnails
+  • Slide duration: How long each image is displayed (in seconds)
+  • Dissolve duration: Time for transition between images (in seconds)
+  • Loop: Whether to repeat the slideshow when it reaches the end
+  • Image number: Whether to show the image number in the thumbnails
 3. Select a starting image by clicking on a thumbnail (optional - defaults to first image).
 4. Click "START" to begin the slideshow.
 
 SLIDESHOW CONTROLS
 While the slideshow is running, you can use these keyboard controls:
-• Spacebar: Pause/resume the slideshow
-• Right Arrow: Go to next image
-• Left Arrow: Go to previous image  
-• Escape: Exit slideshow and return to main window
+  • Spacebar: Pause/resume the slideshow
+  • Right Arrow: Go to next image
+  • Left Arrow: Go to previous image  
+  • Escape: Exit slideshow and return to main window
 
 THUMBNAILS
-• Click any thumbnail to select it as the starting image.
-• The selected thumbnail will have a white border.
-• When you start the slideshow, it will begin with the selected image.
-• If no thumbnail is selected, the slideshow starts with the first image.
+  • Click any thumbnail to select it as the starting image.
+  • The selected thumbnail will have a white border.
+  • When you start the slideshow, it will begin with the selected image.
+  • If no thumbnail is selected, the slideshow starts with the first image.
 
 SUPPORTED FORMATS
-• JPEG (.jpg, .jpeg)
-• PNG (.png)
-• WebP (.webp)
-• BMP (.bmp)
-• GIF (.gif)
-• TIFF (.tiff, .tif)
+  • JPEG (.jpg, .jpeg)
+  • PNG (.png)
+  • WebP (.webp)
+  • BMP (.bmp)
+  • GIF (.gif)
+  • TIFF (.tiff, .tif)
 
 TIPS & TRICKS
-• The last selected directory is automatically remembered.
-• The settings for slide duration and dissolve duration are remembered.
-• The total duration of the slideshow is calculated from the duration each slide plus the duration of the dissolves and is displayed below the directory field.
-• If you select a thumbnail image the slide show will start from that image.
-• Images are displayed in your operating system's default sort order.
-• Large images are automatically resized to fit your screen while maintaining aspect ratio.
-• Images are automatically rotated based on their EXIF orientation data."""
+  • The last selected directory is automatically remembered.
+  • The settings for slide duration and dissolve duration are remembered.
+  • The total duration of the slideshow is calculated from the duration each slide plus the duration of the dissolves and is displayed below the directory field.
+  • If you select a thumbnail image the slide show will start from that image.
+  • Images are displayed in your operating system's default sort order.
+  • Large images are automatically resized to fit your screen while maintaining aspect ratio.
+  • Images are automatically rotated based on their EXIF orientation data."""
         
         self.text_widget.insert("1.0", help_text)
         self.text_widget.configure(state="disabled")  # Make read-only
