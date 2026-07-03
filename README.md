@@ -1,6 +1,6 @@
 # SlideShow
 
-A cross-platform full-screen photo slideshow application with smooth dissolve transitions.
+A cross-platform full-screen slideshow application with GUI and command-line interfaces.
 
 ![Platform Support](https:/## Keyboard Controls
 
@@ -27,6 +27,8 @@ A cross-platform full-screen photo slideshow application with smooth dissolve tr
 - **Customizable timing** for display and transition duration
 - **Keyboard controls** for navigation and playback
 - **Natural file sorting** matching your operating system
+- **Automatic orientation** from EXIF data
+- **Storage of state** for directory and durations
 - **GUI and command-line** interfaces available
 
 > **📄 License Notice**: SlideShow is free for personal, educational, and research use under the CC BY-NC 4.0 license. Commercial use is prohibited. [Learn more](#license)

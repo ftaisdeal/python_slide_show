@@ -8,6 +8,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 import sys
 import os
+import json
 import platform
 import locale
 from pathlib import Path
@@ -112,7 +113,7 @@ class SlideshowApp:
         directory = self.directory_var.get().strip()
         if directory and os.path.exists(directory) and os.path.isdir(directory):
             # Valid directory - save it and update thumbnails
-            self.save_last_directory(directory)
+            self.save_config()
             self.update_thumbnails()
         elif directory:
             # Invalid directory - create a temporary style with red background
@@ -133,24 +134,34 @@ class SlideshowApp:
         )
         if directory:
             self.directory_var.set(directory)
-            self.save_last_directory(directory)
+            self.save_config()
             self.update_thumbnails()
-    def save_last_directory(self, directory):
-        """Save the last selected directory to config file"""
+    def save_config(self):
+        """Save the last selected directory and slideshow durations to config file"""
         try:
+            config = {
+                "directory": self.directory_var.get(),
+                "display_time": self.display_time_var.get(),
+                "dissolve_time": self.dissolve_time_var.get(),
+            }
             with open(self.config_path, "w") as f:
-                f.write(directory)
+                json.dump(config, f)
         except Exception as e:
-            print(f"Could not save last directory: {e}")
-    def load_last_directory(self):
-        if os.path.exists(self.config_path):
-            try:
-                with open(self.config_path, "r") as f:
-                    last_dir = f.read().strip()
-                    if last_dir:
-                        self.directory_var.set(last_dir)
-            except Exception as e:
-                print(f"Could not load last directory: {e}")
+            print(f"Could not save config: {e}")
+    def load_config(self):
+        if not os.path.exists(self.config_path):
+            return
+        try:
+            with open(self.config_path, "r") as f:
+                config = json.load(f)
+            if config.get("directory"):
+                self.directory_var.set(config["directory"])
+            if config.get("display_time"):
+                self.display_time_var.set(config["display_time"])
+            if config.get("dissolve_time"):
+                self.dissolve_time_var.set(config["dissolve_time"])
+        except Exception as e:
+            print(f"Could not load config: {e}")
     def __init__(self):
         self.root = tk.Tk()
         self.root.title("SlideShow")
@@ -160,14 +171,14 @@ class SlideshowApp:
         # Store config in ~/Library/Application Support/SlideShow/
         config_dir = os.path.expanduser("~/Library/Application Support/SlideShow")
         os.makedirs(config_dir, exist_ok=True)
-        self.config_path = os.path.join(config_dir, "slideshow_config.txt")
+        self.config_path = os.path.join(config_dir, "slideshow_config.json")
         self.directory_var = tk.StringVar()
         self.display_time_var = tk.StringVar(value="10")
         self.dissolve_time_var = tk.StringVar(value="1")
         self.loop_var = tk.BooleanVar(value=True)  # Loop by default
         self.show_thumb_numbers_var = tk.BooleanVar(value=True)  # Show numbers by default
         self.selected_thumbnail_idx = None
-        self.load_last_directory()
+        self.load_config()
         
         # Create cross-platform menu bar
         self.create_menu_bar()
@@ -218,7 +229,7 @@ class SlideshowApp:
             self.root.bind("<Control-q>", lambda e: self.root.quit())
 
     def validate_numeric_input(self, var_name):
-        def validate():
+        def validate(event=None):
             try:
                 value = getattr(self, var_name).get()
                 if value == "":
@@ -226,6 +237,7 @@ class SlideshowApp:
                 float(value)
             except ValueError:
                 getattr(self, var_name).set("")
+            self.save_config()
         return validate
 
     def setup_ui(self):
@@ -440,6 +452,7 @@ class SlideshowApp:
             dissolve_time = float(self.dissolve_time_var.get())
         except ValueError:
             dissolve_time = 1
+        self.save_config()
         # Hide launcher window
         self.root.withdraw()
         # Determine starting index
